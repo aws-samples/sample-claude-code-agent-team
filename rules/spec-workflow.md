@@ -58,6 +58,8 @@ Plan -> Build (per group) -> Review -> Fix (if FAIL) -> Cleanup. See `fullstack-
 
 **Acceptance criteria MUST include verification in priority order**: (1) Encryption at rest verified via `aws <service> describe-<resource> | jq '.EncryptionConfiguration'` (expect: AWS KMS key ARN present) — blocks deployment, (2) Encryption in transit verified via `aws <service> get-<resource>-policy` (expect: `aws:SecureTransport` condition present) — blocks deployment, (3) Access logging enabled via `aws <service> get-<resource>-logging` (expect: logging target configured) — required for review PASS, (4) Data classification tags via `aws <service> list-tags-of-resource` (expect: `data-classification` tag present) — required for review PASS.
 
+**Serverless-specific acceptance criteria**: For Lambda tasks, verify event schema conformance via `get_lambda_event_schemas` from `aws-serverless` plugin. For SAM deployments, verification MUST include `sam_build` + `sam_local_invoke` (local test) before `sam_deploy`. For API Gateway, verify authorization is configured on all routes. For Aurora DSQL tasks, verify schema via `get_schema` and test queries via `readonly_query` from `databases-on-aws` plugin. For Amplify tasks, verify sandbox deployment succeeds before production.
+
 **Completion criteria**: Zero criticals + zero warnings + all tests passing + all tasks `[x]`. Suggestions don't block.
 
 **Safeguards**: Max 3 review cycles per group, then escalate. Log decisions in `decisions.md`. Same blocker twice -> escalate to user.

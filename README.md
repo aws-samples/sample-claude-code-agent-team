@@ -99,12 +99,15 @@ cp -rn skills/ ~/.claude/skills/
 claude /plugins
 ```
 
-The `deploy-on-aws` plugin comes from a custom marketplace (`awslabs/agent-plugins`), not the default Claude plugins marketplace. The provided `settings.json` already includes the required configuration:
+The AWS plugins (`deploy-on-aws`, `aws-amplify`, `aws-serverless`, `databases-on-aws`) come from a custom marketplace (`awslabs/agent-plugins`), not the default Claude plugins marketplace. The provided `settings.json` already includes the required configuration:
 
 ```json
 {
   "enabledPlugins": {
-    "deploy-on-aws@agent-plugins-for-aws": true
+    "deploy-on-aws@agent-plugins-for-aws": true,
+    "aws-amplify@agent-plugins-for-aws": true,
+    "aws-serverless@agent-plugins-for-aws": true,
+    "databases-on-aws@agent-plugins-for-aws": true
   },
   "extraKnownMarketplaces": {
     "agent-plugins-for-aws": {
@@ -117,7 +120,7 @@ The `deploy-on-aws` plugin comes from a custom marketplace (`awslabs/agent-plugi
 }
 ```
 
-If you are merging into an existing `settings.json` (Option B), ensure you add both the `enabledPlugins` entry and the `extraKnownMarketplaces` block. Without the marketplace definition, Claude Code cannot resolve the `deploy-on-aws` plugin.
+If you are merging into an existing `settings.json` (Option B), ensure you add both the `enabledPlugins` entries and the `extraKnownMarketplaces` block. Without the marketplace definition, Claude Code cannot resolve the AWS plugins.
 
 5. Verify MCP servers are working:
 
@@ -194,6 +197,9 @@ This configuration enables the following Claude Code plugins via `settings.json`
 | security-guidance | Security best practices review |
 | frontend-design | Production-grade frontend interface design |
 | deploy-on-aws | AWS deployment workflows — codebase analysis, service recommendation, cost estimation, IaC generation, and deployment. Provides `awsiac` (CloudFormation/CDK validation, compliance, best practices), `awspricing` (pricing data, cost reports), and a diagram skill for architecture diagrams |
+| aws-amplify | AWS Amplify Gen 2 workflows — full-stack app deployment (React, Next.js, Vue, Angular, mobile), authentication, data models, storage, GraphQL APIs, sandbox/production environments |
+| aws-serverless | AWS serverless development — Lambda function design/build/deploy/test, SAM CLI operations, API Gateway (REST/HTTP/WebSocket), Event Source Mapping setup/optimization, serverless templates, durable functions |
+| databases-on-aws | Database operations — Aurora DSQL queries, schema inspection, migrations, DSQL documentation and best practice recommendations |
 
 ## MCP Servers
 

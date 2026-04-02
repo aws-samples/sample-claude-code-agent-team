@@ -30,6 +30,8 @@ Delegate to these plugins in parallel for deeper automated analysis. Invoke all 
 | `context7` | Verify library API usage is correct — look up the library docs for functions used in the PR |
 | `awslabs.cdk-mcp-server` | When reviewing CDK constructs — verify construct props and configuration patterns |
 | `deploy-on-aws:awsiac` | When reviewing CloudFormation or CDK-generated templates — validate templates (`validate_cloudformation_template`), check compliance (`check_cloudformation_template_compliance`), get CDK best practices (`cdk_best_practices`) |
+| `aws-serverless` plugin | When reviewing Lambda handlers — verify event schemas via `get_lambda_event_schemas`, check ESM configs via `esm_guidance`, validate IAM policies via `secure_esm_*_policy` tools |
+| `databases-on-aws` plugin | When reviewing DSQL code — verify schema via `get_schema`, validate queries via `readonly_query`, check patterns via `dsql_recommend` |
 | `awslabs.aws-documentation-mcp-server` | When reviewing AWS service integration code — verify API behavior, limits, error codes |
 **Use MCP lookup when:** you're unsure whether an API is being used correctly, a resource property is valid, or a library function has the expected behavior. Verify before flagging.
 

@@ -27,6 +27,9 @@ Does each task's implementation satisfy acceptance criteria and interface contra
 - **Performance**: No N+1 queries, appropriate data structures, resource cleanup
 - **Maintainability**: Clear naming, no unnecessary complexity, follows project conventions
 - **Infrastructure** (when IaC in scope): Correct outputs, consistent tags, no inline secrets, parameterized config. Use `deploy-on-aws:awsiac` tools — `validate_cloudformation_template` for syntax/schema checks, `check_cloudformation_template_compliance` for security/compliance rules — to validate CloudFormation/CDK templates as part of the review
+- **Serverless** (when Lambda/SAM/API Gateway in scope): Use `aws-serverless` plugin — verify Lambda handler event schemas match via `get_lambda_event_schemas`, validate ESM configurations via `esm_guidance`, check IAM policies via `secure_esm_*_policy` tools for least-privilege event source access
+- **Database** (when Aurora DSQL in scope): Use `databases-on-aws` plugin — verify schema correctness via `get_schema`, validate queries via `readonly_query`, check DSQL-specific patterns via `dsql_recommend`
+- **Amplify** (when Amplify Gen 2 in scope): Verify auth/data/storage configuration follows Amplify best practices
 
 #### Security Review Checklist (priority order)
 

@@ -51,7 +51,7 @@ Agents may interact with AWS services via MCP servers or CLI commands. Credentia
 - **Assume production**: Agents treat all resources as production unless explicitly proven otherwise.
 - **User confirmation gates**: Destructive operations (delete, terminate, modify) require explicit user approval through Claude Code's permission system.
 - **Identity verification**: AWS Security Token Service (AWS STS) identity check via `aws sts get-caller-identity` is required before any AWS operation to confirm credential scope.
-- **AWS security guidelines**: Service-specific security requirements are defined in `rules/AWS-security-guidelines.md` and verified during review, with findings requiring user action to remediate.
+- **AWS security guidelines**: Service-specific security requirements are defined in `rules/AWS-security-guidelines.md` and verified during review, with findings requiring user action to remediate. Coverage includes Lambda, DynamoDB, RDS, EBS, S3, API Gateway, Aurora DSQL, and Amplify Gen 2.
 
 **Risk**: Agents may perform unauthorized privilege escalation or access resources outside authorized scope through exploitation of overly permissive credentials. Users must configure appropriate IAM policies and review all AWS operations.
 

@@ -74,6 +74,34 @@ For infrastructure handling sensitive data, verify the following:
 - **Snapshots**: Encrypt all snapshots. Verify with `aws ec2 describe-snapshots --snapshot-ids <id> | jq '.Snapshots[0].Encrypted'`
 - **Data classification tags**: Apply tags. Verify with `aws ec2 describe-volumes --volume-ids <id> | jq '.Volumes[0].Tags[] | select(.Key=="data-classification")'`
 
+## Amazon API Gateway
+
+- **Authorization**: Configure appropriate authorizers (IAM, Cognito, Lambda) for all routes — **Critical** if missing (no open/unauthenticated endpoints unless explicitly documented)
+- **Throttling**: Set rate limiting and burst limits on all stages and methods. Verify with `aws apigateway get-method-response` or `aws apigatewayv2 get-stage`
+- **WAF integration**: Attach AWS WAF web ACL for public-facing APIs — **Warning** if missing
+- **Mutual TLS**: Enable mTLS for API-to-API communication when handling sensitive data — **Warning** if missing
+- **Access logging**: Enable access logging to CloudWatch Logs or Kinesis Data Firehose. Verify with `aws apigateway get-stage --rest-api-id <id> --stage-name <stage> | jq '.accessLogSettings'` (expect: destination ARN present) — **Warning** if missing
+- **Resource policies**: Restrict API access by source IP or VPC endpoint for private APIs. Verify with `aws apigateway get-rest-api --rest-api-id <id> | jq '.policy'`
+- **Request validation**: Enable request validators for body, query string, and path parameters — **Warning** if missing
+
+## Aurora DSQL
+
+- **IAM authentication**: Use IAM database authentication — never store database passwords. Generate auth tokens via `aws dsql generate-db-connect-auth-token`. Verify IAM policies grant `dsql:DbConnectAdmin` only to required principals — **Critical** if password-based auth is used
+- **Encryption at rest**: Aurora DSQL encrypts data at rest by default using AWS-managed keys. For sensitive data, verify encryption configuration
+- **Encryption in transit**: All DSQL connections use TLS by default. Verify application connection strings use `sslmode=verify-full` — **Critical** if TLS is disabled
+- **Network isolation**: Use VPC endpoints for DSQL access from within VPCs. Verify with `aws ec2 describe-vpc-endpoints --filters Name=service-name,Values=dsql` — **Warning** if accessing over public internet from VPC workloads
+- **Fine-grained access**: Use PostgreSQL GRANT/REVOKE for table and column-level access control. Never grant `superuser` to application roles
+- **Multi-tenant isolation**: For multi-tenant schemas, enforce row-level security (RLS) policies. Verify with `readonly_query` tool: `SELECT * FROM pg_policies` (expect: RLS policies present for tenant tables)
+- **Audit logging**: Enable query logging for compliance. Verify audit trail configuration
+
+## AWS Amplify Gen 2
+
+- **Authentication**: Use Amplify Auth (backed by Amazon Cognito) — configure MFA, password policies, and account recovery. Verify Cognito user pool settings — **Critical** if auth is unenforced on protected routes
+- **Authorization rules**: Define per-model authorization rules in Amplify data schema (`@auth` directives). Verify owner-based and group-based access — **Critical** if models are publicly readable/writable without explicit justification
+- **API keys**: Never expose Amplify API keys in client-side code for production. Use IAM or Cognito-based auth for production APIs
+- **Storage**: Configure S3 storage access levels (guest, authenticated, owner) appropriately. Verify bucket policies — **Warning** if overly permissive
+- **Environment separation**: Use separate Amplify sandbox and production environments. Never deploy dev configurations to production
+
 ## General Requirements
 
 - All secrets via AWS Secrets Manager or Parameter Store, a capability of AWS Systems Manager — do not inline in code or IaC

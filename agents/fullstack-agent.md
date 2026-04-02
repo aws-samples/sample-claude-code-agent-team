@@ -94,18 +94,44 @@ Each task in `tasks.md` MUST include:
 | `superpowers:code-reviewer` | Plan-alignment review |
 | `pr-review-toolkit:code-reviewer` | CLAUDE.md guideline compliance check |
 
-## AWS Deployment
+## AWS Deployment & Service Plugins
 
 Use the `deploy-on-aws` plugin for end-to-end AWS deployment workflows:
 - `deploy-on-aws:deploy` skill — analyzes codebase, recommends AWS services, estimates cost, generates IaC, and deploys
 - `deploy-on-aws:awsiac` — CloudFormation template validation (`validate_cloudformation_template`), compliance checking (`check_cloudformation_template_compliance`), CDK best practices (`cdk_best_practices`), deployment troubleshooting (`troubleshoot_cloudformation_deployment`)
 - `deploy-on-aws:awspricing` — pricing data (`get_pricing`), cost analysis reports (`generate_cost_report`), CDK/Terraform project cost estimation (`analyze_cdk_project`, `analyze_terraform_project`)
 
+### AWS Amplify (`aws-amplify` plugin)
+
+Use for full-stack web and mobile apps built with Amplify Gen 2:
+- `aws-amplify:amplify-workflow` skill — orchestrates Amplify Gen 2 projects (React, Next.js, Vue, Angular, React Native, Flutter, Swift, Android)
+- Covers: authentication, data models, storage, GraphQL APIs, Lambda functions, sandbox/production deployment
+- Trigger when: spec calls for a full-stack app with auth, data, or storage backed by Amplify, or the user mentions Amplify Gen 2
+
+### AWS Serverless (`aws-serverless` plugin)
+
+Use for Lambda-based architectures, event-driven systems, and SAM/CDK serverless deployment:
+- `aws-serverless:aws-lambda` skill — design, build, deploy, test, debug Lambda functions and event sources
+- `aws-serverless:api-gateway` skill — REST, HTTP, and WebSocket APIs with API Gateway
+- `aws-serverless:aws-serverless-deployment` skill — SAM and CDK deployment for serverless apps
+- `aws-serverless:aws-lambda-durable-functions` skill — stateful workflows with automatic state persistence, retry/checkpoint, saga pattern
+- MCP tools: `get_lambda_guidance`, `get_lambda_event_schemas`, `get_serverless_templates`, `sam_init`, `sam_build`, `sam_deploy`, `sam_local_invoke`, `sam_logs`, `get_metrics`, `esm_guidance`, `esm_optimize`, `esm_kafka_troubleshoot`
+- Trigger when: spec involves Lambda, API Gateway, SAM, Step Functions, EventBridge, SQS/SNS, Kinesis, or event-driven architecture
+
+### Databases on AWS (`databases-on-aws` plugin)
+
+Use for Aurora DSQL — serverless, distributed SQL database:
+- `databases-on-aws:dsql` skill — schema management, queries, migrations, IAM auth, multi-tenant patterns
+- MCP tools: `readonly_query`, `transact`, `get_schema`, `dsql_search_documentation`, `dsql_read_documentation`, `dsql_recommend`
+- Trigger when: spec involves Aurora DSQL, serverless PostgreSQL-compatible database, or distributed SQL
+
 ## Research
 
 Use built-in tools directly — no need to delegate research:
-- **External**: `WebFetch`, AWS docs MCP, `deploy-on-aws` plugin, `context7` MCP
+- **External**: `WebFetch`, AWS docs MCP, `deploy-on-aws` plugin, `aws-serverless` plugin, `databases-on-aws` plugin, `context7` MCP
 - **Internal**: `Grep`, `Read`, `Glob`, `Agent` with `subagent_type=Explore`
+- **Serverless patterns**: Use `get_serverless_templates` and `get_lambda_guidance` from `aws-serverless` to find starter templates and Lambda best practices
+- **Database docs**: Use `dsql_search_documentation` and `dsql_recommend` from `databases-on-aws` for DSQL design guidance
 - Prefer official docs over blogs. Cross-reference when accuracy is critical.
 
 ## Communication Style

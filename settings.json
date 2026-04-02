@@ -16,7 +16,10 @@
     "gitlab@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
-    "deploy-on-aws@agent-plugins-for-aws": true
+    "deploy-on-aws@agent-plugins-for-aws": true,
+    "aws-amplify@agent-plugins-for-aws": true,
+    "aws-serverless@agent-plugins-for-aws": true,
+    "databases-on-aws@agent-plugins-for-aws": true
   },
   "extraKnownMarketplaces": {
     "agent-plugins-for-aws": {

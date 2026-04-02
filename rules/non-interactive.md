@@ -24,3 +24,5 @@ All commands MUST run non-interactively with zero user prompts. No command may b
 | docker | `docker system prune -f` |
 | npx | `npx --yes create-foo` |
 | vite | `npx --yes create-vite@latest my-app --template react-ts` |
+| sam | `sam init --no-interactive`, `sam build`, `sam deploy --no-confirm-changeset --no-fail-on-empty-changeset` |
+| amplify | `npx ampx sandbox --once` (non-interactive sandbox deploy) |
