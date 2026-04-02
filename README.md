@@ -120,13 +120,15 @@ claude
 │   ├── fullstack-agent.md      # Team lead — architecture, planning, coordination
 │   ├── coding-agent.md         # Implements features and tests
 │   ├── devops-agent.md         # Infrastructure, CI/CD, containers, docs
-│   └── review-agent.md         # Code review and quality verification
+│   ├── review-agent.md         # Code review and quality verification
+│   └── sa-agent.md             # AWS Solutions Architect — Well-Architected reviews
 ├── .mcp.json                   # MCP server configurations used by agents and skills
 ├── rules/                      # Global behavioral rules for all agents
 │   ├── spec-workflow.md        # Spec-driven development loop with parallel task groups
 │   ├── agent-team-protocol.md  # Shared teammate lifecycle and communication protocol
 │   ├── non-interactive.md      # All commands must run non-interactively
-│   └── virtual-environments.md # Dependency isolation requirements
+│   ├── virtual-environments.md # Dependency isolation requirements
+│   └── AWS-security-guidelines.md # AWS security best practices and production safeguards
 ├── skills/                     # Domain-specific knowledge files
 │   ├── documentation/          # Technical writing patterns
 │   ├── git-workflow/           # Git operations and conventions
