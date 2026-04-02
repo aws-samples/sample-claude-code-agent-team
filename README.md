@@ -194,7 +194,6 @@ This configuration enables the following Claude Code plugins via `settings.json`
 | github | GitHub issue/PR management |
 | gitlab | GitLab issue/PR management |
 | code-simplifier | Code clarity and maintainability refinement |
-| security-guidance | Security best practices review |
 | frontend-design | Production-grade frontend interface design |
 | deploy-on-aws | AWS deployment workflows — codebase analysis, service recommendation, cost estimation, IaC generation, and deployment. Provides `awsiac` (CloudFormation/CDK validation, compliance, best practices), `awspricing` (pricing data, cost reports), and a diagram skill for architecture diagrams |
 | aws-amplify | AWS Amplify Gen 2 workflows — full-stack app deployment (React, Next.js, Vue, Angular, mobile), authentication, data models, storage, GraphQL APIs, sandbox/production environments |

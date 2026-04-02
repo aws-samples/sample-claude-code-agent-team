@@ -47,7 +47,7 @@ Agents share the same file system within a Claude Code session. Isolation is enf
 
 Agents may interact with AWS services via MCP servers or CLI commands. Credential security follows these principles:
 
-- **Least-privilege by default**: Production safety rules (`rules/amazon-builder-production-safety.md`) mandate ReadOnly credentials for read operations.
+- **Least-privilege by default**: Production safety rules (`rules/AWS-security-guidelines.md`) mandate ReadOnly credentials for read operations.
 - **Assume production**: Agents treat all resources as production unless explicitly proven otherwise.
 - **User confirmation gates**: Destructive operations (delete, terminate, modify) require explicit user approval through Claude Code's permission system.
 - **Identity verification**: AWS Security Token Service (AWS STS) identity check via `aws sts get-caller-identity` is required before any AWS operation to confirm credential scope.
