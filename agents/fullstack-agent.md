@@ -63,7 +63,7 @@ All non-trivial work follows `.claude/rules/spec-workflow.md`. All AWS infrastru
 8. Monitor via `TaskList`. Respond to completions and blockers promptly
 9. Handle blockers: unblock with a decision (log in `decisions.md`), reassign, or escalate
 10. Run tests once all group tasks complete
-10a. Run security scans in order: (a) Static analysis first to catch code issues: `bandit -r src/ -f json -o .claude/specs/<slug>/bandit-results.json` for Python or `semgrep --config auto --json -o .claude/specs/<slug>/semgrep-results.json` for multi-language, (b) Dependency scan for supply chain risks: `safety check --json > .claude/specs/<slug>/safety-results.json`, (c) IaC scan for infrastructure misconfigurations: `checkov -d infra/ -o json > .claude/specs/<slug>/checkov-results.json`. Security implementation priority: (1) Critical findings — block deployment, (2) High findings — fix or document risk acceptance before merge, (3) Medium findings — fix within sprint. Address all Critical and High findings, or document risk acceptance with compensating controls in `.claude/specs/<slug>/security-exceptions.md`. Include scan result artifacts in the spec directory.
+10a. Run security scans in order: (a) Static analysis first to catch code issues: `bandit -r src/ -f json -o .claude/specs/<slug>/bandit-results.json` for Python or `semgrep --config auto --json -o .claude/specs/<slug>/semgrep-results.json` for multi-language, (b) Dependency scan for supply chain risks: `safety check --json > .claude/specs/<slug>/safety-results.json`, (c) IaC scan for infrastructure misconfigurations: use `deploy-on-aws:awsiac` tools — `validate_cloudformation_template` for syntax/schema validation, `check_cloudformation_template_compliance` for security/compliance rules. For Terraform, use `checkov -d infra/ -o json > .claude/specs/<slug>/checkov-results.json`. Security implementation priority: (1) Critical findings — block deployment, (2) High findings — fix or document risk acceptance before merge, (3) Medium findings — fix within sprint. Address all Critical and High findings, or document risk acceptance with compensating controls in `.claude/specs/<slug>/security-exceptions.md`. Include scan result artifacts in the spec directory.
 11. `SendMessage` review handoff to `review-agent` (spec path, cycle number, modified files, acceptance criteria)
 12. Wait for verdict — do NOT proceed until review-agent responds
 
@@ -94,10 +94,17 @@ Each task in `tasks.md` MUST include:
 | `superpowers:code-reviewer` | Plan-alignment review |
 | `pr-review-toolkit:code-reviewer` | CLAUDE.md guideline compliance check |
 
+## AWS Deployment
+
+Use the `deploy-on-aws` plugin for end-to-end AWS deployment workflows:
+- `deploy-on-aws:deploy` skill — analyzes codebase, recommends AWS services, estimates cost, generates IaC, and deploys
+- `deploy-on-aws:awsiac` — CloudFormation template validation (`validate_cloudformation_template`), compliance checking (`check_cloudformation_template_compliance`), CDK best practices (`cdk_best_practices`), deployment troubleshooting (`troubleshoot_cloudformation_deployment`)
+- `deploy-on-aws:awspricing` — pricing data (`get_pricing`), cost analysis reports (`generate_cost_report`), CDK/Terraform project cost estimation (`analyze_cdk_project`, `analyze_terraform_project`)
+
 ## Research
 
 Use built-in tools directly — no need to delegate research:
-- **External**: `WebFetch`, AWS docs MCP, `context7` MCP
+- **External**: `WebFetch`, AWS docs MCP, `deploy-on-aws` plugin, `context7` MCP
 - **Internal**: `Grep`, `Read`, `Glob`, `Agent` with `subagent_type=Explore`
 - Prefer official docs over blogs. Cross-reference when accuracy is critical.
 

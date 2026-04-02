@@ -1,37 +1,5 @@
 {
   "mcpServers": {
-    "awslabs.aws-pricing-mcp-server": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "awslabs.aws-pricing-mcp-server@1.0.27"
-      ],
-      "env": {
-        "AWS_PROFILE": "default",
-        "AWS_REGION": "us-east-1",
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      }
-    },
-    "awslabs.terraform-mcp-server": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "awslabs.terraform-mcp-server@1.0.18"
-      ],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      }
-    },
-    "awslabs.aws-diagram-mcp-server": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "awslabs.aws-diagram-mcp-server@1.0.23"
-      ],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      }
-    },
     "aws-knowledge-mcp-server": {
       "type": "stdio",
       "command": "npx",
@@ -69,17 +37,6 @@
         "awslabs.cdk-mcp-server@1.0.15"
       ],
       "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      }
-    },
-    "awslabs.aws-iac-mcp-server": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "awslabs.aws-iac-mcp-server@1.0.16"
-      ],
-      "env": {
-        "AWS_PROFILE": "default",
         "FASTMCP_LOG_LEVEL": "ERROR"
       }
     }

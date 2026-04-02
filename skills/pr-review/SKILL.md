@@ -29,8 +29,7 @@ Delegate to these plugins in parallel for deeper automated analysis. Invoke all 
 |---|---|
 | `context7` | Verify library API usage is correct — look up the library docs for functions used in the PR |
 | `awslabs.cdk-mcp-server` | When reviewing CDK constructs — verify construct props and configuration patterns |
-| `awslabs.aws-iac-mcp-server` | When reviewing CloudFormation or CDK-generated templates — check resource specifications |
-| `awslabs.terraform-mcp-server` | When reviewing Terraform modules — verify provider/resource documentation |
+| `deploy-on-aws:awsiac` | When reviewing CloudFormation or CDK-generated templates — validate templates (`validate_cloudformation_template`), check compliance (`check_cloudformation_template_compliance`), get CDK best practices (`cdk_best_practices`) |
 | `awslabs.aws-documentation-mcp-server` | When reviewing AWS service integration code — verify API behavior, limits, error codes |
 **Use MCP lookup when:** you're unsure whether an API is being used correctly, a resource property is valid, or a library function has the expected behavior. Verify before flagging.
 

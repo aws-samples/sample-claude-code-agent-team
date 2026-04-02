@@ -26,7 +26,7 @@ Does each task's implementation satisfy acceptance criteria and interface contra
 - **Security**: No hardcoded secrets, input validation at trust boundaries, least-privilege IAM, no injection vulns, OWASP Top 10
 - **Performance**: No N+1 queries, appropriate data structures, resource cleanup
 - **Maintainability**: Clear naming, no unnecessary complexity, follows project conventions
-- **Infrastructure** (when IaC in scope): Correct outputs, consistent tags, no inline secrets, parameterized config
+- **Infrastructure** (when IaC in scope): Correct outputs, consistent tags, no inline secrets, parameterized config. Use `deploy-on-aws:awsiac` tools — `validate_cloudformation_template` for syntax/schema checks, `check_cloudformation_template_compliance` for security/compliance rules — to validate CloudFormation/CDK templates as part of the review
 
 #### Security Review Checklist (priority order)
 

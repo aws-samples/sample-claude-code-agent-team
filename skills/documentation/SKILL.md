@@ -6,7 +6,7 @@ Use these patterns when writing documentation, creating runbooks, or documenting
 
 | Resource | When to Use |
 |---|---|
-| `awslabs.aws-diagram-mcp-server` | Generate architecture diagrams for system documentation and runbooks |
+| `deploy-on-aws` diagram skill | Generate architecture diagrams for system documentation and runbooks |
 | `awslabs.aws-documentation-mcp-server` | Reference AWS service docs when writing architecture docs or runbooks — link to official docs rather than paraphrasing |
 | `awslabs.document-loader-mcp-server` | Load external reference documents (PDFs, web pages) as source material for documentation |
 | `context7` MCP | Look up library/framework docs to verify technical accuracy in README examples |
@@ -64,7 +64,7 @@ Use OpenAPI/Swagger. Minimum per endpoint:
 What this service does, who owns it.
 
 ## Architecture
-[Use `awslabs.aws-diagram-mcp-server` to generate architecture diagram]
+[Use `deploy-on-aws` diagram skill to generate architecture diagram]
 
 ## Health Checks
 - Endpoint: `GET /health`
@@ -132,5 +132,5 @@ When writing documentation for a project that uses the spec workflow, link to re
 - Keep it scannable (headers, bullets, tables)
 - Update docs when code changes (or automate it)
 - Docs are concise and actionable — no filler
-- Use `awslabs.aws-diagram-mcp-server` for architecture diagrams — don't describe what a diagram can show
+- Use the `deploy-on-aws` diagram skill for architecture diagrams — don't describe what a diagram can show
 - Use `awslabs.document-loader-mcp-server` to load external specs or references rather than copy-pasting content

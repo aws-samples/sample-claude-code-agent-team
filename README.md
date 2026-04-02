@@ -1,6 +1,6 @@
 # Claude Code Multi-Agent Development Sample
 
-A sample configuration for multi-agent development workflows using [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview). Demonstrates how to set up a team of specialized AI agents that collaborate through a spec-driven development process.
+A sample configuration for multi-agent development workflows using [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview). Demonstrates how to set up a team of specialized AI agents that collaborate through a spec-driven development process. Full Stack Developer parent orchestrates three specialists (Coding Agent for application development, DevOps Agent for infrastructure/deployment, and Review Agent for code quality/security). Includes Skills and Steering documents to define agent capabilities, and MCP servers for tooling and knowledge access necessary to deploy a full-stack application to AWS.
 
 > **Disclaimer**: This repository is provided as an example only and is **NOT approved for production use**. The agent configurations, rules, and workflows are starting points — not production-ready defaults. You should review, adjust, and tailor them to fit your own project requirements, team conventions, and security posture. Adoption of this sample requires organizational legal review — you must complete the [LLM Legal Approval](#llm-legal-approval) and [MCP Server Legal Approval](#mcp-server-legal-approval) tables before use.
 
@@ -94,10 +94,30 @@ cp -rn skills/ ~/.claude/skills/
 4. Install required plugins:
 
 ```bash
-# Plugins are installed from the Claude Code marketplace.
+# Most plugins are installed from the Claude Code marketplace.
 # Enable them via settings.json (already configured) or interactively:
 claude /plugins
 ```
+
+The `deploy-on-aws` plugin comes from a custom marketplace (`awslabs/agent-plugins`), not the default Claude plugins marketplace. The provided `settings.json` already includes the required configuration:
+
+```json
+{
+  "enabledPlugins": {
+    "deploy-on-aws@agent-plugins-for-aws": true
+  },
+  "extraKnownMarketplaces": {
+    "agent-plugins-for-aws": {
+      "source": {
+        "source": "github",
+        "repo": "awslabs/agent-plugins"
+      }
+    }
+  }
+}
+```
+
+If you are merging into an existing `settings.json` (Option B), ensure you add both the `enabledPlugins` entry and the `extraKnownMarketplaces` block. Without the marketplace definition, Claude Code cannot resolve the `deploy-on-aws` plugin.
 
 5. Verify MCP servers are working:
 
@@ -173,6 +193,7 @@ This configuration enables the following Claude Code plugins via `settings.json`
 | code-simplifier | Code clarity and maintainability refinement |
 | security-guidance | Security best practices review |
 | frontend-design | Production-grade frontend interface design |
+| deploy-on-aws | AWS deployment workflows — codebase analysis, service recommendation, cost estimation, IaC generation, and deployment. Provides `awsiac` (CloudFormation/CDK validation, compliance, best practices), `awspricing` (pricing data, cost reports), and a diagram skill for architecture diagrams |
 
 ## MCP Servers
 
@@ -182,11 +203,14 @@ MCP servers are configured in [`.mcp.json`](.mcp.json) and auto-installed on fir
 |--------|--------|---------|
 | [aws-knowledge-mcp-server](https://knowledge-mcp.global.api.aws) | AWS (official) | AWS best practices and patterns |
 | [awslabs.aws-documentation-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | AWS service documentation lookup |
-| [awslabs.aws-pricing-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | AWS pricing data and cost analysis |
-| [awslabs.aws-diagram-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | Architecture diagram generation |
-| [awslabs.aws-iac-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | IaC patterns, CDK constructs, and CloudFormation validation |
-| [awslabs.terraform-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | Terraform provider documentation |
 | [awslabs.document-loader-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | Load external documents (PDFs, web pages) |
+| [awslabs.cdk-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | CDK construct documentation and guidance |
+
+> **Note**: The following standalone MCP servers have been replaced by the `deploy-on-aws` plugin and are no longer configured in `.mcp.json`:
+> - `awslabs.aws-pricing-mcp-server` → replaced by `deploy-on-aws:awspricing`
+> - `awslabs.aws-iac-mcp-server` → replaced by `deploy-on-aws:awsiac`
+> - `awslabs.aws-diagram-mcp-server` → deprecated, replaced by `deploy-on-aws` diagram skill
+> - `awslabs.terraform-mcp-server` → deprecated by AWS Labs (recommends HashiCorp's official Terraform MCP Server)
 ## Customization
 
 - **Add agents**: Create a new `<name>.md` in `agents/` with frontmatter (`name`, `description`, `model`), then reference it in the fullstack-agent's team composition
@@ -216,10 +240,6 @@ Adopters must complete this table before using the MCP servers configured in [`.
 |--------|----------|-----------------|--------------|---------------------|-----------------|
 | aws-knowledge-mcp-server | AWS (official) | Approved (AWS ToS) | Yes | Yes | AWS-managed |
 | awslabs.aws-documentation-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
-| awslabs.aws-pricing-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
-| awslabs.aws-diagram-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
-| awslabs.aws-iac-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
-| awslabs.terraform-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
 | awslabs.document-loader-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
 | awslabs.cdk-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
 > **Note**: Third-party MCP servers require independent legal and security review by your organization before use. AWS-provided servers fall under AWS Terms of Service.
