@@ -211,11 +211,6 @@ MCP servers are configured in [`.mcp.json`](.mcp.json) and auto-installed on fir
 | [awslabs.document-loader-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | Load external documents (PDFs, web pages) |
 | [awslabs.cdk-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | CDK construct documentation and guidance |
 
-> **Note**: The following standalone MCP servers have been replaced by the `deploy-on-aws` plugin and are no longer configured in `.mcp.json`:
-> - `awslabs.aws-pricing-mcp-server` → replaced by `deploy-on-aws:awspricing`
-> - `awslabs.aws-iac-mcp-server` → replaced by `deploy-on-aws:awsiac`
-> - `awslabs.aws-diagram-mcp-server` → deprecated, replaced by `deploy-on-aws` diagram skill
-> - `awslabs.terraform-mcp-server` → deprecated by AWS Labs (recommends HashiCorp's official Terraform MCP Server)
 ## Customization
 
 - **Add agents**: Create a new `<name>.md` in `agents/` with frontmatter (`name`, `description`, `model`), then reference it in the fullstack-agent's team composition
