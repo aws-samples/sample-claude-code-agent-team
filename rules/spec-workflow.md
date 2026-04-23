@@ -66,4 +66,4 @@ Plan -> Build (per group) -> Review -> Fix (if FAIL) -> Cleanup. See `fullstack-
 
 ## Spec and Document Formats
 
-See `.claude/specs/templates/` for format templates for `spec.md`, `design.md`, `review.md`, `sa-review.md`, `decisions.md`, and `prd.md`. Use them as starting points, not rigid constraints. The `design.md` template includes a mandatory Security Considerations section.
+If `.claude/specs/templates/` exists, use the templates there as starting points for `spec.md`, `design.md`, `review.md`, `sa-review.md`, `decisions.md`, and `prd.md` — they are examples, not rigid constraints. If the directory is absent, follow the section structures described in this file and in the agent definitions. Any `design.md` MUST include a Security Considerations section regardless of template availability.

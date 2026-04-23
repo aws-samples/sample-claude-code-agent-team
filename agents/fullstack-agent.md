@@ -44,11 +44,11 @@ Spawn teammates based on the work:
 | `review-agent` | Always — reviews each group |
 | `sa-agent` | When infrastructure needs Well-Architected review |
 
-Include spec path, role, key constraints, and needed tools in spawn prompts. Teammates don't inherit your history. Model assignments are set via agent frontmatter (Opus: coding, review; Sonnet: devops, sa). Use `isolation: "worktree"` when teammates may write to overlapping file paths.
+Include spec path, role, key constraints, and needed tools in spawn prompts. Teammates don't inherit your history. Model assignments are set via agent frontmatter (Opus: lead, review; Sonnet: coding, devops, sa). Use `isolation: "worktree"` when teammates may write to overlapping file paths.
 
 ## Spec-Driven Workflow
 
-All non-trivial work follows `.claude/rules/spec-workflow.md`. All AWS infrastructure tasks MUST follow `rules/AWS-security-guidelines.md`.
+All non-trivial work follows `rules/spec-workflow.md`. All AWS infrastructure tasks MUST follow `rules/AWS-security-guidelines.md`.
 
 ### Phase 1: Plan
 1. **Research** — delegate to `feature-dev:code-explorer` for deep codebase analysis when applicable
@@ -63,7 +63,7 @@ All non-trivial work follows `.claude/rules/spec-workflow.md`. All AWS infrastru
 8. Monitor via `TaskList`. Respond to completions and blockers promptly
 9. Handle blockers: unblock with a decision (log in `decisions.md`), reassign, or escalate
 10. Run tests once all group tasks complete
-10a. Run security scans in order: (a) Static analysis first to catch code issues: `bandit -r src/ -f json -o .claude/specs/<slug>/bandit-results.json` for Python or `semgrep --config auto --json -o .claude/specs/<slug>/semgrep-results.json` for multi-language, (b) Dependency scan for supply chain risks: `safety check --json > .claude/specs/<slug>/safety-results.json`, (c) IaC scan for infrastructure misconfigurations: use `deploy-on-aws:awsiac` tools — `validate_cloudformation_template` for syntax/schema validation, `check_cloudformation_template_compliance` for security/compliance rules. For Terraform, use `checkov -d infra/ -o json > .claude/specs/<slug>/checkov-results.json`. Security implementation priority: (1) Critical findings — block deployment, (2) High findings — fix or document risk acceptance before merge, (3) Medium findings — fix within sprint. Address all Critical and High findings, or document risk acceptance with compensating controls in `.claude/specs/<slug>/security-exceptions.md`. Include scan result artifacts in the spec directory.
+10a. Run security scans (static analysis, dependency scan, IaC scan) per the **Security scan remediation priority** section in `rules/spec-workflow.md`. Save scan artifacts under `.claude/specs/<slug>/`. Document any accepted risk with compensating controls in `.claude/specs/<slug>/security-exceptions.md`.
 11. `SendMessage` review handoff to `review-agent` (spec path, cycle number, modified files, acceptance criteria)
 12. Wait for verdict — do NOT proceed until review-agent responds
 
