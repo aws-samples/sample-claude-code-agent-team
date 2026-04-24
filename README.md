@@ -13,7 +13,7 @@ This repo provides a sample `.claude` configuration with four core agents that w
 | Agent | Role | Model |
 |-------|------|-------|
 | **fullstack-agent** | Team lead — researches, designs specs, creates plans, delegates work | opus |
-| **coding-agent** | Implements features and writes tests from specs | opus |
+| **coding-agent** | Implements features and writes tests from specs | sonnet |
 | **devops-agent** | Infrastructure, CI/CD, containers, and documentation | sonnet |
 | **review-agent** | Reviews implementations for correctness, security, and quality | opus |
 

@@ -5,7 +5,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "mcp-remote@0.1.38",
+        "mcp-remote",
         "https://knowledge-mcp.global.api.aws"
       ],
       "env": {}
@@ -14,7 +14,7 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "awslabs.aws-documentation-mcp-server@1.1.20"
+        "awslabs.aws-documentation-mcp-server@latest"
       ],
       "env": {
         "FASTMCP_LOG_LEVEL": "ERROR"
@@ -24,7 +24,7 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "awslabs.document-loader-mcp-server@1.0.13"
+        "awslabs.document-loader-mcp-server@latest"
       ],
       "env": {
         "FASTMCP_LOG_LEVEL": "ERROR"
@@ -34,7 +34,7 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
-        "awslabs.cdk-mcp-server@1.0.15"
+        "awslabs.cdk-mcp-server@latest"
       ],
       "env": {
         "FASTMCP_LOG_LEVEL": "ERROR"
