@@ -4,7 +4,7 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB": "1",
     "ENABLE_TOOL_SEARCH": "auto:5",
-    "MAX_MCP_OUTPUT_TOKENS": "25000"
+    "MAX_MCP_OUTPUT_TOKENS": "50000"
   },
   "enabledPlugins": {
     "context7@claude-plugins-official": true,
