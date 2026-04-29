@@ -106,7 +106,7 @@ Use PostgreSQL on RDS.
 
 ## Spec Artifact Documentation
 
-When documenting within the spec-driven workflow, these artifacts have defined formats (see `rules/spec-workflow.md`):
+When documenting within the spec-driven workflow, these artifacts have defined formats (see `spec-workflow` skill):
 
 | Artifact | Owner | Purpose |
 |----------|-------|---------|

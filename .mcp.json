@@ -1,15 +1,5 @@
 {
   "mcpServers": {
-    "aws-knowledge-mcp-server": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://knowledge-mcp.global.api.aws"
-      ],
-      "env": {}
-    },
     "awslabs.aws-documentation-mcp-server": {
       "type": "stdio",
       "command": "uvx",

@@ -11,7 +11,7 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 **Threat:** Agents execute in the same Claude Code session with shared file system access. An agent operating outside defined scope due to configuration error or logic fault may perform unauthorized file system modifications beyond its assigned scope.
 
 **Mitigations** (require user configuration and ongoing verification):
-- Agent team protocol (`rules/agent-team-protocol.md`) restricts each agent to files listed in its task assignment — users must define and maintain these restrictions
+- Agent team protocol (`skills/agent-team-protocol/`) restricts each agent to files listed in its task assignment — users must define and maintain these restrictions
 - Verification gate requires agents to confirm they only modified assigned files before marking tasks complete — users must enforce this gate in their workflow
 - `review-agent` independently verifies changes match task scope — users must include review-agent in their team composition
 - Claude Code's permission system prompts the user before executing potentially dangerous operations — users must review and respond to these prompts
@@ -21,7 +21,7 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 **Threat:** Agents interacting with AWS services may perform unauthorized privilege escalation through IAM policy exploitation, access resources outside authorized scope, or execute unauthorized modifications to production infrastructure.
 
 **Mitigations** (require user configuration and ongoing verification):
-- Production safety rules (`rules/amazon-builder-production-safety.md`) mandate ReadOnly/least-privilege credentials for read operations — users must configure appropriate AWS profiles and IAM policies
+- AWS security guidelines (`rules/AWS-security-guidelines.md`) mandate ReadOnly/least-privilege credentials for read operations — users must configure appropriate AWS profiles and IAM policies
 - Agents must assume resources are production unless proven otherwise — users must verify agents follow this convention
 - Destructive operations (delete, terminate, modify) require explicit user confirmation — users must not grant blanket approval
 - AWS Security Token Service (AWS STS) identity verification via `aws sts get-caller-identity` is required before any AWS operation — users must ensure credentials are correctly scoped
@@ -35,7 +35,7 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 - Claude Code's built-in permission system gates file operations — users must review permission prompts and not grant overly broad access
 - Spec-driven workflow constrains agents to spec-defined file paths — users must define accurate file paths in specs
 - Agent team protocol requires agents to stay within task scope — users must verify compliance during review
-- Non-interactive execution rules prevent agents from bypassing confirmation prompts — users must maintain these rules in their configuration
+- The `non-interactive` skill requires agents to run commands without bypassing confirmation prompts — users must keep the skill available in their configuration
 
 ### 4. MCP Server Trust
 
@@ -52,9 +52,9 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 **Threat:** Plugins execute code within the Claude Code session and may access data outside authorized scope boundaries.
 
 **Mitigations** (require user configuration and ongoing verification):
-- All configured plugins are from the official Claude Code marketplace — users must review plugin permissions before enabling
+- All configured plugins come from vetted marketplaces — the official Claude Code marketplace (`claude-plugins-official`) and the AWS Labs marketplace (`agent-plugins-for-aws`, declared in `extraKnownMarketplaces`). Users must review plugin permissions before enabling and vet any additional marketplaces before adding them
 - Plugins operate within Claude Code's permission framework — users must maintain appropriate permission settings
-- The `security-guidance` plugin specifically reviews for security best practices — users must include this plugin in their configuration and act on its findings
+- The `pr-review-toolkit` and `code-review` plugins provide specialized security and quality review — users must include these plugins in their configuration and act on their findings
 
 ## AI Security Controls
 
@@ -221,7 +221,7 @@ Each phase must be verified before proceeding to the next:
 |------|-----------|--------|------------|
 | Agent modifies files outside task scope | Low | Medium | Agent protocol file restrictions + review-agent verification |
 | AWS credential misuse by agent | Low | High | Production safety rules + ReadOnly defaults + user confirmation gates |
-| Hardcoded secrets in generated code | Medium | High | review-agent security checks + security-guidance plugin |
+| Hardcoded secrets in generated code | Medium | High | review-agent security checks + pr-review-toolkit plugin |
 | MCP server returns manipulated data | Low | Medium | Prompt injection detection + user-visible tool results |
 | Plugin accesses unintended data | Low | Low | Claude Code permission framework + marketplace-only plugins |
 
@@ -229,7 +229,7 @@ Each phase must be verified before proceeding to the next:
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| Sensitive data in agent-generated code | Medium | High | review-agent checks + security-guidance plugin + no-hardcoded-secrets rules |
+| Sensitive data in agent-generated code | Medium | High | review-agent checks + pr-review-toolkit plugin + AWS-security-guidelines rule |
 | AWS service usage without proper authorization | Low | Medium | Production safety rules + credential verification before operations |
 | Data handling by AI agents | Medium | Medium | All processing occurs locally in the user's Claude Code session |
 

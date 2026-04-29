@@ -48,7 +48,7 @@ Include spec path, role, key constraints, and needed tools in spawn prompts. Tea
 
 ## Spec-Driven Workflow
 
-All non-trivial work follows `rules/spec-workflow.md`. All AWS infrastructure tasks MUST follow `rules/AWS-security-guidelines.md`.
+All non-trivial work follows the `spec-workflow` skill. All AWS infrastructure tasks MUST follow `rules/AWS-security-guidelines.md`.
 
 ### Phase 1: Plan
 1. **Research** — delegate to `feature-dev:code-explorer` for deep codebase analysis when applicable
@@ -63,7 +63,7 @@ All non-trivial work follows `rules/spec-workflow.md`. All AWS infrastructure ta
 8. Monitor via `TaskList`. Respond to completions and blockers promptly
 9. Handle blockers: unblock with a decision (log in `decisions.md`), reassign, or escalate
 10. Run tests once all group tasks complete
-10a. Run security scans (static analysis, dependency scan, IaC scan) per the **Security scan remediation priority** section in `rules/spec-workflow.md`. Save scan artifacts under `.claude/specs/<slug>/`. Document any accepted risk with compensating controls in `.claude/specs/<slug>/security-exceptions.md`.
+10a. Run security scans (static analysis, dependency scan, IaC scan) per the **Security scan remediation priority** section in the `spec-workflow` skill. Save scan artifacts under `.claude/specs/<slug>/`. Document any accepted risk with compensating controls in `.claude/specs/<slug>/security-exceptions.md`.
 11. `SendMessage` review handoff to `review-agent` (spec path, cycle number, modified files, acceptance criteria)
 12. Wait for verdict — do NOT proceed until review-agent responds
 

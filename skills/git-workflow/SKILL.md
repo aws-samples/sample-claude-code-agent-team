@@ -45,7 +45,7 @@ Examples:
 
 ## Non-Interactive Git
 
-All git commands must be non-interactive per `rules/non-interactive.md`:
+All git commands must be non-interactive (see `non-interactive` skill):
 
 ```bash
 # Always use --no-pager or GIT_PAGER=cat

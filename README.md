@@ -147,15 +147,18 @@ claude
 │   └── sa-agent.md             # AWS Solutions Architect — Well-Architected reviews
 ├── .mcp.json                   # MCP server configurations used by agents and skills
 ├── rules/                      # Global behavioral rules for all agents
-│   ├── spec-workflow.md        # Spec-driven development loop with parallel task groups
-│   ├── agent-team-protocol.md  # Shared teammate lifecycle and communication protocol
-│   ├── non-interactive.md      # All commands must run non-interactively
-│   ├── virtual-environments.md # Dependency isolation requirements
 │   └── AWS-security-guidelines.md # AWS security best practices and production safeguards
-├── skills/                     # Domain-specific knowledge files
+├── skills/                     # Domain-specific knowledge files (invoked on demand)
+│   ├── spec-workflow/          # Spec-driven development loop with parallel task groups
+│   ├── agent-team-protocol/    # Shared teammate lifecycle and communication protocol
+│   ├── non-interactive/        # All commands must run non-interactively
+│   ├── virtual-environments/   # Project dependency isolation per language
 │   ├── documentation/          # Technical writing patterns
 │   ├── git-workflow/           # Git operations and conventions
 │   └── pr-review/              # Pull request review patterns
+├── commands/                   # Optional slash commands (see Optional Commands section)
+│   ├── brainstorm.md           # `/brainstorm` — structured new-project ideation -> requirements.md
+│   └── optimize-my-claude.md   # `/optimize-my-claude` — audit and tune ~/.claude after model releases
 └── settings.json               # Claude Code settings (env vars, enabled plugins)
 ```
 
@@ -163,9 +166,9 @@ claude
 
 **Agents** define who does what. Each agent has a markdown file with YAML frontmatter (name, description, model) and a detailed system prompt (role, constraints, workflow). The team lead (`fullstack-agent`) spawns and coordinates teammates.
 
-**Rules** are global behavioral constraints that apply to all agents. They enforce consistency — like requiring non-interactive execution, dependency isolation, or following the spec-driven workflow.
+**Rules** are global behavioral constraints that apply to all agents. They enforce consistency — like AWS security guidelines and production safeguards that must be honored on every interaction.
 
-**Skills** are domain-specific knowledge that agents can reference. They provide patterns and best practices for specific tools and technologies (e.g., AWS CLI, Docker, CDK).
+**Skills** are domain-specific knowledge that agents invoke on demand. They provide patterns, protocols, and best practices for specific workflows (e.g., spec-driven development, agent-team coordination, git workflow, PR review).
 
 **Specs** are created at runtime in `.claude/specs/<slug>/` and contain the design decisions, task plans, review findings, and decision logs for each piece of work.
 
@@ -173,11 +176,38 @@ claude
 
 | Rule | Purpose |
 |------|---------|
-| `spec-workflow.md` | Defines the full plan → build → review loop with parallel task groups and spec directory structure |
-| `agent-team-protocol.md` | Shared teammate lifecycle — claiming tasks, communication patterns, verification gates, blocker reporting |
-| `non-interactive.md` | All commands must run without user prompts — pass `-y`, `--yes`, `--no-input` flags |
-| `virtual-environments.md` | Project dependency isolation per language (venv, node\_modules, cargo, go mod) |
 | `AWS-security-guidelines.md` | Enforces AWS security best practices including least-privilege access, production safeguards, and credential handling |
+
+## Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `spec-workflow` | Defines the full plan → build → review loop with parallel task groups and the `.claude/specs/<slug>/` directory structure |
+| `agent-team-protocol` | Shared teammate lifecycle — claiming tasks, communication patterns, verification gates, and blocker reporting |
+| `non-interactive` | Guidance for running all commands without user prompts — `-y`, `--yes`, `--no-input`, disabled pagers, no TTY assumptions |
+| `virtual-environments` | Project dependency isolation per language (Python venv, `node_modules`, cargo, go mod) with version pinning and lock files |
+| `documentation` | Technical writing patterns for runbooks, architecture docs, and AWS service documentation linking |
+| `git-workflow` | Conventional commit style, branch naming, and integration with the `commit-commands` plugin for commit/push/PR flows |
+| `pr-review` | Pull request review patterns and delegation to the `pr-review-toolkit` plugin for specialized analyses |
+
+## Optional Commands
+
+The `commands/` directory contains optional slash commands that plug into this workflow. They are not required for the core plan → build → review loop, but they cover two common needs around it: starting new work and keeping the configuration current.
+
+Install them alongside the other config:
+
+```bash
+cp -r commands/ ~/.claude/commands/
+```
+
+Once copied, invoke them from any Claude Code session as slash commands.
+
+| Command | When to Use | Purpose |
+|---------|-------------|---------|
+| `/brainstorm` | Starting a new project from a rough idea | Walks through up to 10 clarifying questions (users, scale, integrations, NFRs, budget, deployment, edge cases, MVP scope), synthesizes a requirements document with the user, then writes it to `.claude/specs/<slug>/requirements.md`. This feeds directly into the `spec-workflow` skill as the starting point for `spec.md`, `design.md`, and `tasks.md` |
+| `/optimize-my-claude` | Following a new Claude model release (e.g., after an Opus/Sonnet/Haiku upgrade) | Audits the full `~/.claude` configuration — settings, agents, rules, skills, plugins, and MCP servers — against current best practices for the active model. Flags deprecated env vars, stale model IDs, cost leaks (e.g., teammates pinned to Opus for focused work), redundant content, and missing features. Presents findings by impact, waits for user approval, then applies only the approved changes. Pass an optional focus area (e.g., `/optimize-my-claude settings`) to scope the audit |
+
+Both commands are interactive — they ask for confirmation before writing files or making configuration changes.
 
 ## Plugins
 
@@ -206,7 +236,6 @@ MCP servers are configured in [`.mcp.json`](.mcp.json) and auto-installed on fir
 
 | Server | Source | Purpose |
 |--------|--------|---------|
-| [aws-knowledge-mcp-server](https://knowledge-mcp.global.api.aws) | AWS (official) | AWS best practices and patterns |
 | [awslabs.aws-documentation-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | AWS service documentation lookup |
 | [awslabs.document-loader-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | Load external documents (PDFs, web pages) |
 | [awslabs.cdk-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | CDK construct documentation and guidance |
@@ -238,7 +267,6 @@ Adopters must complete this table before using the MCP servers configured in [`.
 
 | Server | Provider | Approval Status | Right to Use | Distribution Rights | Security Review |
 |--------|----------|-----------------|--------------|---------------------|-----------------|
-| aws-knowledge-mcp-server | AWS (official) | Approved (AWS ToS) | Yes | Yes | AWS-managed |
 | awslabs.aws-documentation-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
 | awslabs.document-loader-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
 | awslabs.cdk-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
