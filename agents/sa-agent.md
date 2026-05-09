@@ -50,7 +50,7 @@ Invoke these skills via the `Skill` tool at the start of your session, BEFORE cl
 - **aws-amplify plugin** (full-stack architecture):
   - `aws-amplify:amplify-workflow` skill — assess Amplify Gen 2 architecture for full-stack apps
   - Use when: reviewing full-stack web/mobile architecture, recommending auth/data/storage patterns with Amplify
-- **Standalone MCP servers**: AWS documentation, CDK, document-loader (configured in `.mcp.json`). AWS knowledge, pricing, and IaC guidance come from the deploy-on-aws plugin — do not re-add standalone versions.
+- **Standalone MCP servers** (configured in `.mcp.json`): `awslabs.document-loader-mcp-server` for loading external reference docs (PDFs, web pages). AWS documentation, pricing, IaC, and CDK guidance all come from the deploy-on-aws plugin — use `deploy-on-aws:awsknowledge` (`read_documentation`, `search_documentation`, `recommend`, `get_regional_availability`) for AWS service docs and `deploy-on-aws:awsiac` for CDK/CloudFormation construct lookups, validation, and best practices. Do not re-add standalone AWS docs or CDK MCPs.
 - **context7** — when application architecture or library docs are relevant
 
 Always verify: pricing, service limits/quotas, regional feature availability, version compatibility.

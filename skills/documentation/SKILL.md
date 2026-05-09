@@ -7,7 +7,7 @@ Use these patterns when writing documentation, creating runbooks, or documenting
 | Resource | When to Use |
 |---|---|
 | `deploy-on-aws` diagram skill | Generate architecture diagrams for system documentation and runbooks |
-| `awslabs.aws-documentation-mcp-server` | Reference AWS service docs when writing architecture docs or runbooks — link to official docs rather than paraphrasing |
+| `deploy-on-aws:awsknowledge` | Reference AWS service docs when writing architecture docs or runbooks — use `read_documentation`, `search_documentation`, and `recommend` to link to official docs rather than paraphrasing |
 | `awslabs.document-loader-mcp-server` | Load external reference documents (PDFs, web pages) as source material for documentation |
 | `aws-serverless` plugin | Use `get_lambda_guidance` and `get_serverless_templates` to document serverless patterns, Lambda configurations, and SAM deployment steps |
 | `databases-on-aws` plugin | Use `dsql_search_documentation` and `dsql_recommend` to document DSQL schema design, query patterns, and migration procedures |

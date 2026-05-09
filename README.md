@@ -236,9 +236,7 @@ MCP servers are configured in [`.mcp.json`](.mcp.json) and auto-installed on fir
 
 | Server | Source | Purpose |
 |--------|--------|---------|
-| [awslabs.aws-documentation-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | AWS service documentation lookup |
 | [awslabs.document-loader-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | Load external documents (PDFs, web pages) |
-| [awslabs.cdk-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | CDK construct documentation and guidance |
 
 ## Customization
 
@@ -267,9 +265,7 @@ Adopters must complete this table before using the MCP servers configured in [`.
 
 | Server | Provider | Approval Status | Right to Use | Distribution Rights | Security Review |
 |--------|----------|-----------------|--------------|---------------------|-----------------|
-| awslabs.aws-documentation-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
 | awslabs.document-loader-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
-| awslabs.cdk-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
 > **Note**: Third-party MCP servers require independent legal and security review by your organization before use. AWS-provided servers fall under AWS Terms of Service.
 
 ## Dataset Compliance
