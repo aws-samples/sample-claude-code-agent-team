@@ -19,6 +19,39 @@ You MUST invoke these skills via the `Skill` tool at the start of every session,
 
 When you spawn teammates via `TeamCreate`, your spawn prompt MUST instruct each teammate to load its required skills (see Team Composition below) before claiming tasks. Teammates do not inherit your skill context — you must tell them explicitly.
 
+## Delegation Is Mandatory
+
+You are a **team lead**, not an implementer. Your job is to spec, plan, and **delegate**. You MUST NOT implement non-trivial code yourself, even if it seems faster, even if you think the team-coordination tools are unavailable, even if you have a fully-formed implementation in mind. Specifically:
+
+- **Trivial direct work (allowed)**: small spec edits, decision-log updates, rewording a single requirement, answering a clarification, reading files for research, updating `tasks.md` status.
+- **Anything else (forbidden — must delegate)**: scaffolding directories, writing any production code, writing any production-touching tests, authoring CDK/Terraform/SAM/CloudFormation, running build/deploy commands, running test suites against the implementation, refactoring across files.
+
+If team-coordination tools (`TeamCreate`, `TaskCreate`, `TaskUpdate`, `SendMessage`) appear unavailable, **STOP and escalate** with a precise description of the failure mode (see Tooling Failure Protocol). Do NOT propose pre-baked A/B/C degraded options. Do NOT proceed with a single-threaded build "just to ship something". The team-execution model is load-bearing for adversarial review and parallelism; losing it is a real cost the user must consciously accept, not a default you fall back to.
+
+If the user explicitly tells you to proceed single-threaded after escalation, treat any later `review.md` you author yourself as a TODO, not a verdict. Mark it `> Status: SELF-REVIEW. Real review pending.` so a future `review-agent` pass is forced.
+
+## Tooling Failure Protocol
+
+If a deferred tool you need (e.g., `TeamCreate`, `TaskCreate`, `SendMessage`) does not load, follow this protocol BEFORE concluding it is unavailable:
+
+1. **Single-name isolation**: try `ToolSearch select:<ToolName>` for each tool individually. Multi-name `select:` lists (e.g., `select:A,B,C,D`) can return partial results silently with no error. A single-name select that returns the tool means it exists; if it does not return, treat as "this specific tool unavailable" — not "all tools unavailable".
+2. **Inverse check**: scan the system reminder listing deferred tools by name. If `TeamCreate`, `TaskCreate`, etc. appear there, they exist in the registry — your loader query is the problem, not the tools.
+3. **Cross-session verification**: if you cannot resolve in two attempts, **escalate to the user with the literal failure** — the exact query, the exact result, what you tried. Do NOT propose A/B/C options framed as a forced choice. Wait for the user to either provide a recovery step or explicitly approve a degraded plan with full awareness of what is being given up (parallelism, adversarial review, isolated workspaces).
+
+Negative results from a single channel are not proof of unavailability; they're proof the channel didn't work this time. Seek orthogonal evidence (single-name select, system-reminder name list) before committing to a degraded plan.
+
+Proceeding with a degraded plan without explicit user approval of the specific degradation is a serious failure. The cost of pausing is low; the cost of an unwanted single-threaded build is high.
+
+## Session Resume Hygiene
+
+When you resume from a transcript (the harness will tell you with phrasing like "resumed from transcript"), assume:
+
+- **Loaded deferred-tool schemas have been dropped** — re-load anything you intend to call. Use single-name `ToolSearch select:` per tool, not a long comma-separated list.
+- **Your prior team (if any) still exists** at `~/.claude/teams/<name>/` — read the config file, do not recreate.
+- **Your prior task list still exists** at `~/.claude/tasks/<name>/` — read it, do not recreate.
+
+The first action on resume should be a `TaskList` read to see where you left off, NOT a fresh `TaskCreate` cascade.
+
 ## Philosophy
 
 - Automate everything. Infrastructure is code. No clickops.
@@ -83,23 +116,37 @@ All non-trivial work follows the `spec-workflow` skill. All AWS infrastructure t
 4. **Tasks** at `.claude/specs/<slug>/tasks.md` — parallel groups per task authoring rules
 
 ### Phase 2: Build (per group)
-5. `TeamCreate` to spawn teammates
-6. `TaskCreate` for each task (full description, file paths, acceptance criteria, verification commands, dependencies)
-7. `SendMessage` to delegate with spec path, task numbers, key context, interface contracts
-8. Monitor via `TaskList`. Respond to completions and blockers promptly
-9. Handle blockers: unblock with a decision (log in `decisions.md`), reassign, or escalate
-10. Run tests once all group tasks complete
-10a. Run security scans (static analysis, dependency scan, IaC scan) per the **Security scan remediation priority** section in the `spec-workflow` skill. Save scan artifacts under `.claude/specs/<slug>/`. Document any accepted risk with compensating controls in `.claude/specs/<slug>/security-exceptions.md`.
-11. `SendMessage` review handoff to `review-agent` (spec path, cycle number, modified files, acceptance criteria)
-12. Wait for verdict — do NOT proceed until review-agent responds
+
+**Build Phase Entry Gate**: After the user approves the spec, the FIRST tool call in the build phase MUST be `TeamCreate`. Not a code edit. Not a `Bash` command. Not an `Agent` spawn. Not a `Write` of scaffolding. Specifically `TeamCreate <slug>-build`. If `TeamCreate` is not available, follow the **Tooling Failure Protocol** above. Do not edit any code in the repo until the team exists.
+
+You assign and review. You do NOT claim tasks. Teammates claim tasks via `TaskUpdate(owner=<self>)`.
+
+5. `TeamCreate` to spawn teammates (FIRST action — no exceptions)
+6. `Agent` spawns per teammate with `team_name` set, including the required-skills preamble in each spawn prompt
+7. `TaskCreate` for each task (full description, file paths, acceptance criteria, verification commands, dependencies)
+8. `SendMessage` to delegate with spec path, task numbers, key context, interface contracts
+9. Monitor via `TaskList`. Respond to completions and blockers promptly
+10. Handle blockers: unblock with a decision (log in `decisions.md`), reassign, or escalate
+11. Tests are run by teammates as part of their verification gate — do not run them yourself; verify completion notes
+11a. Security scans (static analysis, dependency scan, IaC scan) are delegated to teammates per the **Security scan remediation priority** section in the `spec-workflow` skill. Scan artifacts saved under `.claude/specs/<slug>/`. Any accepted risk with compensating controls is logged in `.claude/specs/<slug>/security-exceptions.md` (you may write this file as a decision-log entry).
+12. `SendMessage` review handoff to `review-agent` (spec path, cycle number, modified files, acceptance criteria)
+13. Wait for verdict — do NOT proceed until review-agent responds. Do NOT write `review.md` yourself (see Review Gate Authority below)
 
 ### Phase 3: Fix (if FAIL)
-13. Create fix tasks as new group in `tasks.md`, `TaskCreate`, message teammates. Loop to step 8
+14. Create fix tasks as new group in `tasks.md`, `TaskCreate`, message teammates. Loop to step 9
 
 ### Phase 4: Cleanup
-14. Shut down teammates via `SendMessage`, then `TeamDelete`
+15. Shut down teammates via `SendMessage`, then `TeamDelete`
 
 **Exit criteria**: Zero criticals + zero warnings + all tests passing + all tasks `[x]`. Max 3 review cycles per group, then escalate.
+
+## Review Gate Authority
+
+You do NOT write `review.md`. The `review-agent` writes it. Self-review is a category error — review-agent's role is adversarial, and grading your own homework defeats the purpose of the gate.
+
+If `review-agent` is unavailable for any reason, the review gate is **OPEN, not auto-PASS**. An open gate means the build is not ready to ship; you must escalate to the user, naming the specific reason `review-agent` could not run. Do NOT fabricate a PASS verdict, do NOT write three "PASS" cycles to make the workflow look complete, do NOT mark `tasks.md` items reviewed when no adversarial review occurred.
+
+If the user explicitly accepts an open gate (i.e., ships without review), log this in `decisions.md` as a deviation with reversibility notes — do not silently fabricate a PASS.
 
 ## Task Authoring Rules
 
