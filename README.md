@@ -146,11 +146,11 @@ claude
 │   ├── review-agent.md         # Code review and quality verification
 │   └── sa-agent.md             # AWS Solutions Architect — Well-Architected reviews
 ├── .mcp.json                   # MCP server configurations used by agents and skills
-├── rules/                      # Global behavioral rules for all agents
-│   └── AWS-security-guidelines.md # AWS security best practices and production safeguards
+├── rules/                      # Global behavioral rules for all agents (auto-loaded every session)
+│   ├── AWS-security-guidelines.md # AWS security best practices and production safeguards
+│   └── agent-team-protocol.md  # Shared teammate lifecycle and communication protocol
 ├── skills/                     # Domain-specific knowledge files (invoked on demand)
 │   ├── spec-workflow/          # Spec-driven development loop with parallel task groups
-│   ├── agent-team-protocol/    # Shared teammate lifecycle and communication protocol
 │   ├── non-interactive/        # All commands must run non-interactively
 │   ├── virtual-environments/   # Project dependency isolation per language
 │   ├── documentation/          # Technical writing patterns
@@ -177,13 +177,13 @@ claude
 | Rule | Purpose |
 |------|---------|
 | `AWS-security-guidelines.md` | Enforces AWS security best practices including least-privilege access, production safeguards, and credential handling |
+| `agent-team-protocol.md` | Shared teammate lifecycle — claiming tasks, communication patterns, verification gates, and blocker reporting. Loaded as a rule (not a skill) so every spawned teammate inherits it as priming without needing to invoke `Skill` |
 
 ## Skills
 
 | Skill | Purpose |
 |-------|---------|
-| `spec-workflow` | Defines the full plan → build → review loop with parallel task groups and the `.claude/specs/<slug>/` directory structure |
-| `agent-team-protocol` | Shared teammate lifecycle — claiming tasks, communication patterns, verification gates, and blocker reporting |
+| `spec-workflow` | Defines the full plan → build → review loop with parallel task groups and the `.claude/specs/<slug>/` directory structure. Structural conventions (directory layout, task format) are also inlined into each agent file so they are always visible; this skill carries the deeper workflow narrative on demand |
 | `non-interactive` | Guidance for running all commands without user prompts — `-y`, `--yes`, `--no-input`, disabled pagers, no TTY assumptions |
 | `virtual-environments` | Project dependency isolation per language (Python venv, `node_modules`, cargo, go mod) with version pinning and lock files |
 | `documentation` | Technical writing patterns for runbooks, architecture docs, and AWS service documentation linking |

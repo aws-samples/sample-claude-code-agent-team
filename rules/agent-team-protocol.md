@@ -1,14 +1,14 @@
 # Agent Team Protocol
 
-Shared protocol for all agent team teammates. The team lead (fullstack-agent) coordinates; all others are teammates.
+Shared protocol for all agent team teammates. The team lead (`fullstack-agent`) coordinates; all other agents are teammates. This file is loaded as a global rule for every session — every teammate inherits it as priming, no `Skill` invocation required.
 
 ## Teammate Lifecycle
 
 1. Receive delegation via `SendMessage` from the team lead with spec path and task assignments
 2. Read `spec.md` and `design.md` before any work
-3. Claim tasks via `TaskUpdate` (-> `in_progress`), check context in `tasks.md`. Respect task dependencies — blocked tasks auto-unblock when dependencies complete
+3. Claim tasks via `TaskUpdate` (-> `in_progress`); check context in `tasks.md`. Blocked tasks auto-unblock when dependencies complete
 4. Implement exactly what each task describes
-5. Self-verify (see below), then mark complete via `TaskUpdate` (-> `completed`)
+5. Self-verify (see Verification Gate below), then mark complete via `TaskUpdate` (-> `completed`)
 6. Update `tasks.md` with `[x]` and a `> Done.` completion note
 7. Notify team lead via `SendMessage`; after finishing, self-claim unclaimed tasks for your role
 
@@ -16,14 +16,14 @@ Shared protocol for all agent team teammates. The team lead (fullstack-agent) co
 
 - **Direct to teammates**: Interface clarifications, dependency questions, sharing outputs they need
 - **To the lead**: Blockers needing decisions, completion reports, scope/spec questions
-- Tools: `SendMessage` (to any teammate), `TaskUpdate` (claim/complete), `TaskList`/`TaskGet` (status)
+- Tools: `SendMessage` (any teammate), `TaskUpdate` (claim/complete), `TaskList` / `TaskGet` (status)
 
 ## Completion Reporting
 
 Update both places and notify:
 1. `TaskUpdate` -> `completed`
 2. `tasks.md`: `- [x] [role] description` with `> Done. <summary>` note
-3. `SendMessage` to team lead (and relevant teammates if they depend on your output)
+3. `SendMessage` to team lead (and any teammates that depend on your output)
 
 ## Blocker Reporting
 
@@ -42,7 +42,7 @@ If verification fails and you can't fix it within scope, mark `[!]` with the spe
 
 - **Missing details**: Check `spec.md` and `design.md` first. If not there, `SendMessage` to lead or relevant teammate
 - **Multiple valid approaches**: Pick the simplest that satisfies acceptance criteria
-- **Out-of-scope issues**: Note in completion report, don't fix
+- **Out-of-scope issues**: Note in completion report; don't fix
 - **Conflicting requirements**: Mark `[!]`, never silently pick one interpretation
 - **Dependency on another teammate**: `SendMessage` to them directly, then `[!]` if not ready
 
