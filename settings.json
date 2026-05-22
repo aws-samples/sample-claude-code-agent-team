@@ -7,6 +7,11 @@
     "MAX_MCP_OUTPUT_TOKENS": "50000"
   },
   "model": "opus",
+  "availableModels": [
+    "opus",
+    "sonnet",
+    "haiku"
+  ],
   "enabledPlugins": {
     "context7@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,

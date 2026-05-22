@@ -35,7 +35,7 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 - Claude Code's built-in permission system gates file operations — users must review permission prompts and not grant overly broad access
 - Spec-driven workflow constrains agents to spec-defined file paths — users must define accurate file paths in specs
 - Agent team protocol requires agents to stay within task scope — users must verify compliance during review
-- The `non-interactive` skill requires agents to run commands without bypassing confirmation prompts — users must keep the skill available in their configuration
+- The `rules/execution-hygiene.md` rule requires agents to run commands without bypassing confirmation prompts — users must keep the rule available in their configuration
 
 ### 4. MCP Server Trust
 

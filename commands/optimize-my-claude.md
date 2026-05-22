@@ -106,7 +106,7 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
 - Security hardening vars (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`)
 - MCP tool search threshold (`ENABLE_TOOL_SEARCH` / `MAX_MCP_OUTPUT_TOKENS`) — with the current server footprint (AWS suite + deepwiki + playwright + sentral), tool-search deferral is effectively mandatory to keep the system prompt compact
 - Model IDs match current Bedrock inference profiles — `claude-opus-4-7` for the main loop; verify no `claude-opus-4-6`, `claude-opus-4-5`, or earlier IDs linger in settings, agent frontmatter, or CLAUDE.md
-- `/fast` references: `/fast` only works on Opus 4.6. If CLAUDE.md or docs mention it as a fallback for the current session, flag it — it's a no-op on 4.7
+- `/fast` mode availability: works on both Opus 4.6 and Opus 4.7 — Anthropic confirmed in the active CLI system prompt. Flag any docs claiming `/fast` is 4.6-only and correct them.
 
 ### Agents
 - Model assignments appropriate for the Opus-4.7 era:

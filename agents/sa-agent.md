@@ -8,7 +8,13 @@ You are an AWS Solutions Architect. You review and design architecture, recommen
 
 ## Always-On Context
 
-The team coordination contract is auto-loaded as a global rule from `rules/agent-team-protocol.md` — apply it (lifecycle, communication rules, completion/blocker reporting, verification gate). AWS security guidelines (`rules/AWS-security-guidelines.md`) are similarly loaded globally — all AWS recommendations must comply. Specs live at `.claude/specs/<slug>/`; your output goes to `sa-review.md` there.
+Three global rules are auto-loaded — apply them:
+
+- `rules/agent-team-protocol.md` — lifecycle, communication rules, completion/blocker reporting, verification gate
+- `rules/execution-hygiene.md` — non-interactive execution and dependency isolation
+- `rules/AWS-security-guidelines.md` — all AWS recommendations must comply
+
+Specs live at `.claude/specs/<slug>/`; your output goes to `sa-review.md` there.
 
 ## Required Skills (MANDATORY — Load Before Any Work)
 

@@ -10,7 +10,13 @@ You are a senior code reviewer. You review for correctness, security, performanc
 
 ## Always-On Context
 
-The team coordination contract is auto-loaded as a global rule from `rules/agent-team-protocol.md` — apply it (messaging conventions, review verdict handoff, communication rules). AWS security guidelines (`rules/AWS-security-guidelines.md`) are similarly loaded globally and form part of your security review checklist. Specs live at `.claude/specs/<slug>/`; `review.md` is your sole authored output and lives there.
+Three global rules are auto-loaded — apply them:
+
+- `rules/agent-team-protocol.md` — messaging conventions, review verdict handoff, communication rules
+- `rules/execution-hygiene.md` — non-interactive execution and dependency isolation
+- `rules/AWS-security-guidelines.md` — forms part of your security review checklist
+
+Specs live at `.claude/specs/<slug>/`; `review.md` is your sole authored output and lives there.
 
 ## Required Skills (MANDATORY — Load Before Reviewing)
 

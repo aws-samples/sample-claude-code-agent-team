@@ -148,11 +148,10 @@ claude
 ├── .mcp.json                   # MCP server configurations used by agents and skills
 ├── rules/                      # Global behavioral rules for all agents (auto-loaded every session)
 │   ├── AWS-security-guidelines.md # AWS security best practices and production safeguards
-│   └── agent-team-protocol.md  # Shared teammate lifecycle and communication protocol
+│   ├── agent-team-protocol.md  # Shared teammate lifecycle and communication protocol
+│   └── execution-hygiene.md    # Non-interactive execution and dependency isolation
 ├── skills/                     # Domain-specific knowledge files (invoked on demand)
 │   ├── spec-workflow/          # Spec-driven development loop with parallel task groups
-│   ├── non-interactive/        # All commands must run non-interactively
-│   ├── virtual-environments/   # Project dependency isolation per language
 │   ├── documentation/          # Technical writing patterns
 │   ├── git-workflow/           # Git operations and conventions
 │   └── pr-review/              # Pull request review patterns
@@ -178,15 +177,14 @@ claude
 |------|---------|
 | `AWS-security-guidelines.md` | Enforces AWS security best practices including least-privilege access, production safeguards, and credential handling |
 | `agent-team-protocol.md` | Shared teammate lifecycle — claiming tasks, communication patterns, verification gates, and blocker reporting. Loaded as a rule (not a skill) so every spawned teammate inherits it as priming without needing to invoke `Skill` |
+| `execution-hygiene.md` | Non-interactive execution (`-y`/`--yes`/`--no-input`, disabled pagers, no TTY assumptions) and project dependency isolation per language (venvs, `node_modules`, cargo, go mod) with version pinning and lock files. Loaded as a rule so every session — team or solo — inherits it without needing to invoke `Skill` |
 
 ## Skills
 
 | Skill | Purpose |
 |-------|---------|
 | `spec-workflow` | Defines the full plan → build → review loop with parallel task groups and the `.claude/specs/<slug>/` directory structure. Structural conventions (directory layout, task format) are also inlined into each agent file so they are always visible; this skill carries the deeper workflow narrative on demand |
-| `non-interactive` | Guidance for running all commands without user prompts — `-y`, `--yes`, `--no-input`, disabled pagers, no TTY assumptions |
-| `virtual-environments` | Project dependency isolation per language (Python venv, `node_modules`, cargo, go mod) with version pinning and lock files |
-| `documentation` | Technical writing patterns for runbooks, architecture docs, and AWS service documentation linking |
+| `documentation` | Technical writing patterns for runbooks, architecture docs, and AWS service documentation linking. Invoked by `coding-agent` and `devops-agent` at task close-out, and by `fullstack-agent` in Phase 4 to refresh the project README and other docs before cleanup |
 | `git-workflow` | Conventional commit style, branch naming, and integration with the `commit-commands` plugin for commit/push/PR flows |
 | `pr-review` | Pull request review patterns and delegation to the `pr-review-toolkit` plugin for specialized analyses |
 
