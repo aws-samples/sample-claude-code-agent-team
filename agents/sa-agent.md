@@ -90,6 +90,7 @@ Beyond the shared gate:
 - Every pricing figure, limit, or feature claim verified against MCP tools — not from memory
 - Severity calibration: Critical = real outage/breach risk, not theoretical
 - Every recommendation names a specific service, configuration, or action — no generic advice
+- **Completing a task: write the verification sentinel** (machine-enforced by the `TaskCompleted` hook). If your task has a `Run:` command, run it, then `mkdir -p ~/.claude/logs/verified/<team> && echo "<Run cmd> PASSED" > ~/.claude/logs/verified/<team>/task-<id>.verified` before `TaskUpdate -> completed`. If your task is pure analysis with no runnable verification and completion is blocked, ask the lead to tag it `[skip-verify]` — do not fabricate a `Run:` command. See `rules/agent-team-protocol.md` → "Enforced Hooks".
 
 ## Plugin Agent
 

@@ -76,6 +76,7 @@ Use these plugin skills and tools when implementing AWS-backed features:
 Beyond the shared verification gate:
 - Run linting/type-checking if the project has it configured
 - Confirm interface conformance — your implementation matches exact signatures from the task
+- **Write the verification sentinel before completing** (machine-enforced by the `TaskCompleted` hook). After your task's `Run:` command passes: `mkdir -p ~/.claude/logs/verified/<team> && echo "<Run cmd> PASSED" > ~/.claude/logs/verified/<team>/task-<id>.verified` (your real team name + numeric task id). Without it, `TaskUpdate -> completed` is blocked. See `rules/agent-team-protocol.md` → "Enforced Hooks".
 
 ## Workflow
 
@@ -88,7 +89,7 @@ Beyond the shared verification gate:
 7. When code has try/catch or retry logic, delegate to `pr-review-toolkit:silent-failure-hunter` subagent
 8. Delegate to `pr-review-toolkit:comment-analyzer` subagent for doc accuracy check
 9. **Update task-relevant documentation (MANDATORY before marking complete)** — invoke the `documentation` skill via the `Skill` tool to refresh any docs touched by your task. Scope: only docs relevant to what you implemented (e.g., module READMEs, API references, usage examples, inline docstrings, config docs, changelog entries). Ensure sufficient detail — purpose, public interfaces, parameters, return values, edge cases, and example usage where applicable. The team lead handles the top-level project README in Phase 4; do not duplicate that here. If `documentation` skill is unavailable, mark the task `[!]` and notify the lead — do not silently skip
-10. Mark complete, notify lead
+10. Write the verification sentinel (see Additional Verification), then mark complete and notify lead
 
 ## Constraints
 

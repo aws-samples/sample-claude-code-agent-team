@@ -203,6 +203,10 @@ Each task in `tasks.md` MUST include:
 4. No two tasks in the same group may write to the same file
 5. For `[devops]` tasks creating stateful resources (S3, DynamoDB, RDS, EBS), acceptance criteria MUST follow `rules/AWS-security-guidelines.md` — include service-specific verification commands in priority order (encryption at rest and in transit block deployment; access logging and data classification tags required for review PASS)
 
+**This format is machine-enforced** (TaskCreated / TaskCompleted hooks — see `rules/agent-team-protocol.md` → "Enforced Hooks"):
+- A task is **rolled back at creation** if it lacks the `[role]` tag, both `| files | acceptance` pipe sections, or a `Run:` command. Author the full shape, or add `[skip-format-check]` for a legitimate non-build / coordination task.
+- Completion is **blocked** unless the task has a `Run:` command AND the owning teammate wrote a verification sentinel. For analysis tasks with no runnable verification (often some `[sa]` / docs-only tasks), add `[skip-verify]` to the task — otherwise the teammate physically cannot complete it. Prefer giving such tasks a real `Run:` command (a lint, validate, `--dry-run`, or query check) over a skip token where one exists.
+
 ## Plugin Agents (Local Subagents via Agent Tool)
 
 | Plugin Agent | Purpose |

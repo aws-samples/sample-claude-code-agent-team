@@ -32,11 +32,35 @@ Mark `[!]` in `tasks.md` with specific blocker details. `SendMessage` to team le
 ## Verification Gate (All Teammates)
 
 Before marking ANY task complete:
-1. Run the verification command specified in the task
+1. Run the verification command specified in the task (the `Run:` command)
 2. Confirm interface/output contracts match the task spec exactly
 3. Confirm you only modified files listed in your task assignment
+4. **Write the verification sentinel** (machine-enforced — see below), then `TaskUpdate -> completed`
 
 If verification fails and you can't fix it within scope, mark `[!]` with the specific failure.
+
+## Enforced Hooks (Automated Guardrails)
+
+Three settings.json hooks enforce this protocol automatically when an agent team is active. They are **fail-open** (a hook error never blocks you) and log every decision to `~/.claude/logs/team-hooks.jsonl`. Scripts live at `hooks/` in this project (resolved via `$CLAUDE_PROJECT_DIR`).
+
+### 1. Task format check (`TaskCreated`)
+A task is **rolled back at creation** unless its subject/description contains: a `[coding|devops|sa|sfdc]` role tag, pipe-delimited `| <files> | <acceptance>`, and a `Run: <command>`. This is the lead's concern (the lead authors tasks), but all agents should know the shape:
+`[role] <verb> <what> | <file paths> | <acceptance>. Run: <command>`
+- **Bypass** (non-build / coordination / research tasks): include `[skip-format-check]` anywhere in the subject or description.
+
+### 2. Verification gate (`TaskCompleted`) — ACTION REQUIRED BY TEAMMATES
+A task **cannot be marked complete** unless (a) it carries a `Run:` command, and (b) you have written a **verification sentinel** after that command passed. The hook cannot see your transcript, so the sentinel is your attestation that you actually ran verification. After your `Run:` command passes, and immediately before `TaskUpdate -> completed`:
+
+```bash
+mkdir -p ~/.claude/logs/verified/<team_name>
+echo "<the Run command> PASSED" > ~/.claude/logs/verified/<team_name>/task-<task_id>.verified
+```
+
+Use your real team name and the task's numeric id. The sentinel is consumed (deleted) on a successful completion, so it cannot be reused. If you skip this, your completion is blocked with instructions.
+- **Bypass** (tasks that genuinely need no verification, e.g. docs-only): include `[skip-verify]` in the task subject/description.
+
+### 3. Idle work-check (`TeammateIdle`)
+Before you go idle, the hook checks the task store for **unclaimed, unblocked tasks tagged with your role**. If any exist, you are kept working and nudged to either claim one (`TaskUpdate(owner=<you>, status=in_progress)`) or confirm to the lead you're genuinely done. After 2 nudges for the same task set it lets you idle (loop-safe). This enforces the lifecycle step "self-claim unclaimed tasks for your role."
 
 ## Handling Ambiguity
 

@@ -43,6 +43,7 @@ Agents coordinate through shared tasks (`TaskCreate`/`TaskUpdate`/`TaskList`) an
 - [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) installed
 - [Node.js](https://nodejs.org/) (for `npx`-based MCP servers)
 - [uv](https://docs.astral.sh/uv/) (for `uvx`-based MCP servers)
+- Python 3.8+ on `PATH` (the agent-team enforcement hooks in `hooks/` are Python scripts invoked by Claude Code; they use only the standard library)
 - AWS credentials configured (for AWS MCP servers that need API access)
 - *(Optional)* [tmux](https://github.com/tmux/tmux) or [iTerm2](https://iterm2.com/) with Python API enabled — for split-pane display mode where each agent gets its own visible terminal pane. Without these, agent teams run in in-process mode (default), which works in any terminal.
 
@@ -61,8 +62,14 @@ mkdir -p ~/.claude
 cp -r agents/ ~/.claude/agents/
 cp -r rules/ ~/.claude/rules/
 cp -r skills/ ~/.claude/skills/
+cp -r hooks/ ~/.claude/hooks/
+chmod +x ~/.claude/hooks/*.py
 cp settings.json ~/.claude/settings.json
 cp .mcp.json ~/.claude/.mcp.json
+
+# The bundled settings.json wires hooks via $CLAUDE_PROJECT_DIR (per-project hooks/).
+# When installing globally to ~/.claude/hooks/, rewrite the hook commands so they
+# point at $HOME/.claude/hooks/ instead — see "Hook path resolution" below.
 ```
 
 **Option B — Merge into existing config**:
@@ -71,15 +78,21 @@ cp .mcp.json ~/.claude/.mcp.json
 # Back up your current config
 cp -r ~/.claude ~/.claude.bak
 
-# Copy agents, rules, and skills (won't overwrite existing files)
+# Copy agents, rules, skills, and hooks (won't overwrite existing files)
 cp -rn agents/ ~/.claude/agents/
 cp -rn rules/ ~/.claude/rules/
 cp -rn skills/ ~/.claude/skills/
+cp -rn hooks/ ~/.claude/hooks/
+chmod +x ~/.claude/hooks/*.py
 
 # Manually merge settings.json and .mcp.json into your existing files:
-# - settings.json: merge the "env" and "enabledPlugins" keys
+# - settings.json: merge the "env", "enabledPlugins", and "hooks" keys (rewrite
+#   hook command paths from $CLAUDE_PROJECT_DIR to $HOME/.claude/hooks/ — see
+#   "Hook path resolution" below)
 # - .mcp.json: merge the "mcpServers" entries
 ```
+
+**Hook path resolution.** The bundled `settings.json` wires the three enforcement hooks with `python3 "$CLAUDE_PROJECT_DIR/hooks/..."` so this repo can ship and run them without leaving the project. When you install hooks under `~/.claude/hooks/` (the natural location for a global setup), edit the `hooks` block in your merged `settings.json` to use `$HOME/.claude/hooks/...` instead. Either form works — the hooks themselves resolve `~/.claude/logs/...` paths via `$HOME` regardless of where the scripts live.
 
 3. Enable the agent teams experimental feature in your `settings.json`:
 
@@ -91,36 +104,76 @@ cp -rn skills/ ~/.claude/skills/
 }
 ```
 
-4. Install required plugins:
+4. Install required plugins.
 
-```bash
-# Most plugins are installed from the Claude Code marketplace.
-# Enable them via settings.json (already configured) or interactively:
-claude /plugins
-```
+   Plugins live in two marketplaces. The bundled `settings.json` declares both via `enabledPlugins` (15 entries) and `extraKnownMarketplaces`. On a fresh Claude Code install you still need to register the **official Claude marketplace** explicitly — `extraKnownMarketplaces` only carries non-default sources. The AWS marketplace is already wired by the bundled `settings.json` and registers automatically on next session start.
 
-The AWS plugins (`deploy-on-aws`, `aws-amplify`, `aws-serverless`, `databases-on-aws`) come from a custom marketplace (`awslabs/agent-plugins`), not the default Claude plugins marketplace. The provided `settings.json` already includes the required configuration:
+   **a) Register the official Claude marketplace** (one-time, host-wide):
 
-```json
-{
-  "enabledPlugins": {
-    "deploy-on-aws@agent-plugins-for-aws": true,
-    "aws-amplify@agent-plugins-for-aws": true,
-    "aws-serverless@agent-plugins-for-aws": true,
-    "databases-on-aws@agent-plugins-for-aws": true
-  },
-  "extraKnownMarketplaces": {
-    "agent-plugins-for-aws": {
-      "source": {
-        "source": "github",
-        "repo": "awslabs/agent-plugins"
-      }
-    }
-  }
-}
-```
+   ```bash
+   claude plugin marketplace add anthropics/claude-plugins-official
+   ```
 
-If you are merging into an existing `settings.json` (Option B), ensure you add both the `enabledPlugins` entries and the `extraKnownMarketplaces` block. Without the marketplace definition, Claude Code cannot resolve the AWS plugins.
+   Verify both marketplaces are now listed:
+
+   ```bash
+   claude plugin marketplace list
+   # Expect to see: claude-plugins-official, agent-plugins-for-aws
+   ```
+
+   **b) Install + enable plugins.** With the bundled `settings.json` in place, restart Claude Code:
+
+   ```bash
+   claude
+   ```
+
+   On session start, Claude Code reads `enabledPlugins`, fetches each plugin from its declared marketplace, installs it under `~/.claude/plugins/cache/`, and enables it. First start can take ~30s while plugins download.
+
+   Alternatively, install interactively at any time:
+
+   ```bash
+   claude /plugins
+   # Browse, install, and toggle plugins from the menu.
+   ```
+
+   Or install a single plugin directly:
+
+   ```bash
+   claude plugin install deploy-on-aws@agent-plugins-for-aws
+   ```
+
+   **c) Verify.** From inside Claude Code, run `/plugins` and confirm all 15 entries listed in `settings.json` show as **enabled**:
+
+   | Marketplace | Plugins |
+   |-------------|---------|
+   | `claude-plugins-official` | `context7`, `superpowers`, `code-review`, `code-simplifier`, `commit-commands`, `feature-dev`, `frontend-design`, `github`, `gitlab`, `pr-review-toolkit`, `security-guidance` |
+   | `agent-plugins-for-aws` | `deploy-on-aws`, `aws-amplify`, `aws-serverless`, `databases-on-aws` |
+
+   **Option B (merging into existing config):** make sure your merged `settings.json` includes **both** the full `enabledPlugins` block and the `extraKnownMarketplaces.agent-plugins-for-aws` block — without the marketplace definition, Claude Code cannot resolve the four AWS plugins (`@agent-plugins-for-aws`-suffixed names) even after the official marketplace is registered. Reference snippet:
+
+   ```json
+   {
+     "enabledPlugins": {
+       "deploy-on-aws@agent-plugins-for-aws": true,
+       "aws-amplify@agent-plugins-for-aws": true,
+       "aws-serverless@agent-plugins-for-aws": true,
+       "databases-on-aws@agent-plugins-for-aws": true
+     },
+     "extraKnownMarketplaces": {
+       "agent-plugins-for-aws": {
+         "source": {
+           "source": "github",
+           "repo": "awslabs/agent-plugins"
+         }
+       }
+     }
+   }
+   ```
+
+   **Troubleshooting**:
+   - *`marketplace add` fails with a clone error*: the GitHub repos are public, but `git` must be installed and reachable. If you're behind a proxy, configure `git` first.
+   - *Plugins listed in `enabledPlugins` show as missing in `/plugins`*: their marketplace isn't registered. Re-run `claude plugin marketplace list`; if either marketplace is absent, add it (`anthropics/claude-plugins-official` for the official set; the AWS marketplace re-registers automatically from `settings.json`).
+   - *Plugin loaded but its skills/agents are absent*: restart your Claude Code session — plugin contributions are wired at session start, not hot-reloaded.
 
 5. Verify MCP servers are working:
 
@@ -158,7 +211,12 @@ claude
 ├── commands/                   # Optional slash commands (see Optional Commands section)
 │   ├── brainstorm.md           # `/brainstorm` — structured new-project ideation -> requirements.md
 │   └── optimize-my-claude.md   # `/optimize-my-claude` — audit and tune ~/.claude after model releases
-└── settings.json               # Claude Code settings (env vars, enabled plugins)
+├── hooks/                      # Python hook scripts that machine-enforce the agent-team protocol
+│   ├── team_hook_common.py            # Shared payload-parsing, audit-log, and exit-contract helpers
+│   ├── task_created_format_check.py   # TaskCreated → enforce role/file/acceptance/Run task shape
+│   ├── task_completed_verify_gate.py  # TaskCompleted → require Run command + verification sentinel
+│   └── teammate_idle_workcheck.py     # TeammateIdle → nudge if claimable work remains for the role
+└── settings.json               # Claude Code settings (env vars, enabled plugins, hook wiring)
 ```
 
 ## Key Concepts
@@ -169,6 +227,8 @@ claude
 
 **Skills** are domain-specific knowledge that agents invoke on demand. They provide patterns, protocols, and best practices for specific workflows (e.g., spec-driven development, agent-team coordination, git workflow, PR review).
 
+**Hooks** are Python scripts wired into `settings.json` that machine-enforce the agent-team protocol. They gate three events (`TaskCreated`, `TaskCompleted`, `TeammateIdle`), are fail-open by design, and audit every decision to `~/.claude/logs/team-hooks.jsonl`. See the [Hooks](#hooks) section below for the task shape, sentinel convention, and bypass tokens.
+
 **Specs** are created at runtime in `.claude/specs/<slug>/` and contain the design decisions, task plans, review findings, and decision logs for each piece of work.
 
 ## Rules
@@ -176,7 +236,7 @@ claude
 | Rule | Purpose |
 |------|---------|
 | `AWS-security-guidelines.md` | Enforces AWS security best practices including least-privilege access, production safeguards, and credential handling |
-| `agent-team-protocol.md` | Shared teammate lifecycle — claiming tasks, communication patterns, verification gates, and blocker reporting. Loaded as a rule (not a skill) so every spawned teammate inherits it as priming without needing to invoke `Skill` |
+| `agent-team-protocol.md` | Shared teammate lifecycle — claiming tasks, communication patterns, verification gates (machine-enforced via `hooks/`; see [Hooks](#hooks)), and blocker reporting. Loaded as a rule (not a skill) so every spawned teammate inherits it as priming without needing to invoke `Skill` |
 | `execution-hygiene.md` | Non-interactive execution (`-y`/`--yes`/`--no-input`, disabled pagers, no TTY assumptions) and project dependency isolation per language (venvs, `node_modules`, cargo, go mod) with version pinning and lock files. Loaded as a rule so every session — team or solo — inherits it without needing to invoke `Skill` |
 
 ## Skills
@@ -187,6 +247,67 @@ claude
 | `documentation` | Technical writing patterns for runbooks, architecture docs, and AWS service documentation linking. Invoked by `coding-agent` and `devops-agent` at task close-out, and by `fullstack-agent` in Phase 4 to refresh the project README and other docs before cleanup |
 | `git-workflow` | Conventional commit style, branch naming, and integration with the `commit-commands` plugin for commit/push/PR flows |
 | `pr-review` | Pull request review patterns and delegation to the `pr-review-toolkit` plugin for specialized analyses |
+
+## Hooks
+
+Three Python scripts in `hooks/` machine-enforce the agent-team protocol. They are wired in `settings.json` under the `hooks` key and resolved at runtime via `$CLAUDE_PROJECT_DIR` (this repo) or `$HOME` (when installed globally — see "Hook path resolution" in [Quick Start](#quick-start)). Every decision is audited to `~/.claude/logs/team-hooks.jsonl`, and all hooks are **fail-open**: any unexpected condition allows the action, so a hook bug can never block a teammate.
+
+| Event | Script | Enforcement |
+|-------|--------|-------------|
+| `TaskCreated` | `task_created_format_check.py` | Rolls back creation unless the task carries a `[role]` tag, both `\| files \| acceptance` pipe sections, and a `Run: <command>` |
+| `TaskCompleted` | `task_completed_verify_gate.py` | Blocks completion unless the task has a `Run:` command **and** the owning teammate wrote a verification sentinel after that command passed |
+| `TeammateIdle` | `teammate_idle_workcheck.py` | Nudges a teammate that is going idle while unclaimed, unblocked tasks tagged with its role still exist (capped at 2 nudges per claimable set, loop-safe) |
+
+### Task shape
+
+Tasks authored by the team lead must follow:
+
+```
+[coding|devops|sa|sfdc] <verb> <what> | <file paths> | <acceptance>. Run: <command>
+```
+
+Example: `[coding] add JWT verifier | src/auth/jwt.ts | unit tests pass. Run: npm test -- src/auth`
+
+### Verification sentinel
+
+Before a teammate calls `TaskUpdate(status=completed)`, it must run the task's `Run:` command and then write a sentinel attesting that the run passed:
+
+```bash
+mkdir -p ~/.claude/logs/verified/<team_name>
+echo "<the Run command> PASSED" > ~/.claude/logs/verified/<team_name>/task-<task_id>.verified
+```
+
+The hook deletes the sentinel on a successful completion so it cannot be reused. The hook can't read the teammate's transcript — the sentinel is the teammate's attestation that verification actually happened.
+
+### Bypass tokens
+
+Add either token anywhere in the task subject or description for legitimate exceptions:
+
+| Token | Use when |
+|-------|----------|
+| `[skip-format-check]` | The task is coordination/research/non-build work and doesn't need the `[role] \| files \| acceptance \| Run:` shape |
+| `[skip-verify]` | The task is pure analysis or documentation with no runnable verification command (typical for some `[sa]` / `[sfdc]` / docs-only tasks). Prefer giving the task a real `Run:` (lint, validate, `--dry-run`, query check) over a skip token where one exists |
+
+### Verifying hooks are wired
+
+After install, smoke-test from the repo root:
+
+```bash
+# Should exit 2 (block) with "Missing: [role] tag..." on stderr
+echo '{"task_id":"test","task_subject":"do something","task_description":""}' \
+  | python3 hooks/task_created_format_check.py
+
+# Should exit 0 (allow)
+echo '{"task_id":"test","task_subject":"[coding] foo | f.py | tests pass. Run: pytest"}' \
+  | python3 hooks/task_created_format_check.py
+
+# Should exit 0 (fail-open)
+echo '{}' | python3 hooks/task_completed_verify_gate.py
+```
+
+If `claude /doctor` reports the hook commands and Claude Code logs each `TaskCreated` / `TaskCompleted` / `TeammateIdle` decision to `~/.claude/logs/team-hooks.jsonl`, enforcement is live.
+
+The full convention, including loop-guard semantics for `TeammateIdle` and the audit-log schema, lives in `rules/agent-team-protocol.md` → "Enforced Hooks".
 
 ## Optional Commands
 

@@ -18,6 +18,8 @@ Three global rules are auto-loaded — apply them:
 
 Specs live at `.claude/specs/<slug>/`; `review.md` is your sole authored output and lives there.
 
+The `TaskCompleted` / `TeammateIdle` enforcement hooks (`rules/agent-team-protocol.md` → "Enforced Hooks") gate task-list work. You are **handoff-driven** — the lead messages you and you author `review.md` — so they normally don't gate you. If you are ever assigned a formal task, it needs the same verification-sentinel / `[skip-verify]` handling as other teammates.
+
 ## Required Skills (MANDATORY — Load Before Reviewing)
 
 Invoke this skill via the `Skill` tool at the start of your session, BEFORE reading any modified files or writing review findings. Non-negotiable:

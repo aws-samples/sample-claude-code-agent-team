@@ -104,7 +104,7 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
 - Effort level strategy (prefer medium default with on-demand escalation; Opus 4.7 already reasons well at medium, so global high-effort is almost always wasteful)
 - Subagent model strategy (per-agent frontmatter vs global override). With Opus 4.7 as the main-loop model, cost discipline depends on routing focused/narrow work to Sonnet 4.6 or Haiku 4.5 subagents rather than inheriting Opus. Flag any teammate still pinned to `opus` whose task doesn't actually need it.
 - Security hardening vars (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`)
-- MCP tool search threshold (`ENABLE_TOOL_SEARCH` / `MAX_MCP_OUTPUT_TOKENS`) — with the current server footprint (AWS suite + deepwiki + playwright + sentral), tool-search deferral is effectively mandatory to keep the system prompt compact
+- MCP tool search threshold (`ENABLE_TOOL_SEARCH` / `MAX_MCP_OUTPUT_TOKENS`) — with the current server footprint (deploy-on-aws / aws-serverless / databases-on-aws / aws-amplify plugin MCPs + standalone `awslabs.document-loader-mcp-server`), tool-search deferral is effectively mandatory to keep the system prompt compact
 - Model IDs match current Bedrock inference profiles — `claude-opus-4-7` for the main loop; verify no `claude-opus-4-6`, `claude-opus-4-5`, or earlier IDs linger in settings, agent frontmatter, or CLAUDE.md
 - `/fast` mode availability: works on both Opus 4.6 and Opus 4.7 — Anthropic confirmed in the active CLI system prompt. Flag any docs claiming `/fast` is 4.6-only and correct them.
 
@@ -139,7 +139,7 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
 - No deprecated servers (e.g., `awslabs.aws-diagram-mcp-server` has been superseded by the deploy-on-aws diagram skill)
 - Server config uses latest package versions (`@latest`)
 - `FASTMCP_LOG_LEVEL=ERROR` set to reduce noise
-- Deferred tool search threshold appropriate for server count — with the sentral + AWS suite + playwright + deepwiki footprint, the eager-load tool set should be kept small and everything else routed through `ToolSearch`
+- Deferred tool search threshold appropriate for server count — with the AWS plugin suite + standalone `awslabs.document-loader-mcp-server` footprint, the eager-load tool set should be kept small and everything else routed through `ToolSearch`
 - `MAX_MCP_OUTPUT_TOKENS` tuned so a single tool call cannot swamp the Opus 4.7 context window
 
 ### Permissions (settings.local.json)

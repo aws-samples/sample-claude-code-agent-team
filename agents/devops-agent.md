@@ -76,6 +76,7 @@ Verify all AWS security requirements (per the globally-loaded `rules/AWS-securit
 Beyond the shared verification gate:
 - Confirm output contracts — exported resources match exact names specified in the task
 - Check for drift-prone patterns — hardcoded values, missing tags, non-deterministic resource names
+- **Write the verification sentinel before completing** (machine-enforced by the `TaskCompleted` hook). After your task's `Run:` command passes: `mkdir -p ~/.claude/logs/verified/<team> && echo "<Run cmd> PASSED" > ~/.claude/logs/verified/<team>/task-<id>.verified` (your real team name + numeric task id). Without it, `TaskUpdate -> completed` is blocked. See `rules/agent-team-protocol.md` → "Enforced Hooks".
 
 ## Task Close-Out: Documentation (MANDATORY before marking complete)
 
