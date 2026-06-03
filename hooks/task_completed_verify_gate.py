@@ -25,14 +25,21 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from team_hook_common import read_payload, allow, block, audit, VERIFIED_DIR  # noqa: E402
+from team_hook_common import (  # noqa: E402
+    read_payload, allow, block, audit, safe_path_component, VERIFIED_DIR,
+)
 
 EVENT = "TaskCompleted"
 RUN_CMD = re.compile(r"\bRun:\s*\S")
 
 
 def sentinel_path(team, task_id):
-    return os.path.join(VERIFIED_DIR, team or "_noteam", "task-{}.verified".format(task_id))
+    # team_name / task_id come from the payload and are attacker-influenceable;
+    # sanitize each into a single safe path component so a crafted value cannot
+    # traverse out of VERIFIED_DIR (this path is passed to os.remove on success).
+    team_c = safe_path_component(team, default="_noteam")
+    task_c = safe_path_component(task_id, default="_notask")
+    return os.path.join(VERIFIED_DIR, team_c, "task-{}.verified".format(task_c))
 
 
 def main():

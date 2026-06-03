@@ -12,7 +12,7 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
 
 ### Phase 1: Audit Current State
 
-1. **Inventory all configuration files** — read every file under `~/.claude/` that matters. Issue all reads in a single parallel batch (Opus 4.7 handles wide tool fan-out efficiently; sequential reads waste context budget):
+1. **Inventory all configuration files** — read every file under `~/.claude/` that matters. Issue all reads in a single parallel batch (Opus 4.8 handles wide tool fan-out efficiently and has a 1M-token context window; sequential reads still waste turns):
    - `~/CLAUDE.md`
    - `~/.claude/settings.json` and `~/.claude/settings.local.json`
    - `~/.claude/agents/*.md` (all agent definitions)
@@ -28,12 +28,14 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
 
 ### Phase 2: Research Current Best Practices
 
-3. **Research latest Claude Code features** — use the `claude-code-guide` agent to research. Anchor the research on the **active model — Opus 4.7 (`claude-opus-4-7`)** — and flag any recommendations that assume an older model (e.g., Opus 4.6's `/fast` mode is not available on 4.7). Cover:
-   - Opus 4.7 capabilities, pricing, and recommended settings (caching, effort, thinking budget, parallel tool calls)
+3. **Research latest Claude Code features** — use the `claude-code-guide` agent to research. Anchor the research on the **active model — Opus 4.8 (`claude-opus-4-8`)**, whose 1M-token context window is now standard. Flag any recommendation that assumes an older model (e.g., Opus 4.7's tighter token-budget framing, or manual extended-thinking `budget_tokens`, which Opus 4.8 rejects in favor of adaptive thinking).
+
+   **Token-accounting is source-agnostic:** wherever this command reasons about "cost," the real constraint is **token-budget headroom**, independent of how those tokens are consumed — billed per-token via Amazon Bedrock / Google Vertex / the Anthropic API, or counted against an Anthropic subscription plan's rate limits. Published per-token prices ($/MTok) are useful only as *relative weights* between models (Opus > Sonnet > Haiku). Determine the active backend before reasoning about cost: check `settings.json` for `CLAUDE_CODE_USE_BEDROCK` / `CLAUDE_CODE_USE_VERTEX`, the model-ID style (`us.anthropic.claude-*` ⇒ Bedrock inference profile; `claude-*@<date>` ⇒ Vertex; bare `claude-*` ⇒ Anthropic API / plan), and caching env vars (`ENABLE_PROMPT_CACHING_1H_BEDROCK` ⇒ Bedrock). Cover:
+   - Opus 4.8 capabilities and recommended settings (caching, effort, adaptive thinking, parallel tool calls, 1M-context headroom)
    - New or changed environment variables
    - New hook events, skill features, or agent team capabilities
-   - Deprecated settings or features (including model IDs retired between 4.6 and 4.7)
-   - Token optimization best practices specific to Opus-tier models (caching discipline matters more at Opus pricing)
+   - Deprecated settings or features (including model IDs that became legacy by 4.8: `claude-opus-4-7`, `claude-opus-4-6`, `claude-opus-4-5`)
+   - Token optimization best practices specific to Opus-tier models (caching discipline conserves token-budget headroom on every backend, even with 1M context)
    - New plugins or MCP servers worth adopting
 
 4. **Compare current config against best practices** — identify:
@@ -100,24 +102,26 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
 
 ### settings.json
 - Deprecated env vars (`ANTHROPIC_SMALL_FAST_MODEL`, etc.)
-- Prompt caching enabled (no `DISABLE_PROMPT_CACHING=1` unless justified) — caching ROI is highest at Opus 4.7 pricing
-- Effort level strategy (prefer medium default with on-demand escalation; Opus 4.7 already reasons well at medium, so global high-effort is almost always wasteful)
-- Subagent model strategy (per-agent frontmatter vs global override). With Opus 4.7 as the main-loop model, cost discipline depends on routing focused/narrow work to Sonnet 4.6 or Haiku 4.5 subagents rather than inheriting Opus. Flag any teammate still pinned to `opus` whose task doesn't actually need it.
+- Prompt caching enabled (no `DISABLE_PROMPT_CACHING=1` unless justified) — caching ROI is highest at Opus pricing/usage weight; on Bedrock confirm `ENABLE_PROMPT_CACHING_1H_BEDROCK` is set. Cache hits reuse prior context at a fraction of a fresh read's token weight, stretching token-budget headroom regardless of backend
+- Effort level strategy. Opus 4.8 honors the effort knob more strictly than older models; the ladder is `low` < `medium` < `high` < `xhigh` (`xhigh` is Opus 4.8/4.7 only). Per-agent `effort:` frontmatter is the right lever — set `high` on Opus reasoning roles (team lead, review), `medium` on Sonnet/Haiku helper agents, and leave focused implementers at default. Reconcile against the user's "medium default, avoid global high-effort" philosophy in `CLAUDE.md`: that guidance is about the *global* default, not per-agent tiers — keep the global default modest and escalate per-role
+- Subagent model strategy (per-agent frontmatter vs global override). With Opus 4.8 as the main-loop model, token-budget discipline depends on routing focused/narrow work to Sonnet 4.6 or Haiku 4.5 subagents rather than inheriting Opus 4.8 — the win (lower token weight + latency) holds on every backend. Flag any teammate still pinned to `opus` whose task doesn't actually need it.
 - Security hardening vars (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`)
 - MCP tool search threshold (`ENABLE_TOOL_SEARCH` / `MAX_MCP_OUTPUT_TOKENS`) — with the current server footprint (deploy-on-aws / aws-serverless / databases-on-aws / aws-amplify plugin MCPs + standalone `awslabs.document-loader-mcp-server`), tool-search deferral is effectively mandatory to keep the system prompt compact
-- Model IDs match current Bedrock inference profiles — `claude-opus-4-7` for the main loop; verify no `claude-opus-4-6`, `claude-opus-4-5`, or earlier IDs linger in settings, agent frontmatter, or CLAUDE.md
-- `/fast` mode availability: works on both Opus 4.6 and Opus 4.7 — Anthropic confirmed in the active CLI system prompt. Flag any docs claiming `/fast` is 4.6-only and correct them.
+- Model IDs are current for the active backend — main loop on Opus 4.8 (Bedrock inference profile `us.anthropic.claude-opus-4-8`; Vertex `claude-opus-4-8@<date>`; Anthropic API `claude-opus-4-8`). Agent frontmatter uses the `opus` / `sonnet` / `haiku` aliases, resolving to Opus 4.8, Sonnet 4.6, and Haiku 4.5. Verify no `claude-opus-4-7`, `claude-opus-4-6`, `claude-opus-4-5`, or earlier IDs linger as the main loop in settings, agent frontmatter, or CLAUDE.md — these are now legacy
+- **Inference backend matches the account.** Confirm `CLAUDE_CODE_USE_BEDROCK` / `CLAUDE_CODE_USE_VERTEX` (or their absence) is consistent with the model-ID style in use — a mismatch silently routes to the wrong or unavailable backend. Flag any inconsistency
+- `/fast` mode availability: works on Opus 4.8, 4.7, and 4.6 — it speeds up Opus output without downgrading to a smaller model (confirmed in the active CLI system prompt). Flag any docs claiming `/fast` is limited to older Opus versions and correct them.
 
 ### Agents
-- Model assignments appropriate for the Opus-4.7 era:
-  - `opus` (4.7) — team lead, cross-file reasoning, review-agent, code-architect roles
-  - `sonnet` (4.6) — `[coding]` and `[devops]` teammates with well-scoped tasks, Explore agent
+- Model assignments appropriate for the Opus-4.8 era:
+  - `opus` (4.8) — team lead, cross-file reasoning, review-agent, code-architect roles; benefits most from the 1M context on large-repo work. Pair with `effort: high`
+  - `sonnet` (4.6) — `[coding]` and `[devops]` teammates with well-scoped tasks, Explore agent; `effort: medium` for the speed/quality balance
   - `haiku` (4.5) — narrow lookups, mechanical transforms, status-line helpers, quick classifiers
-  - Any `opus` pin on a teammate that does focused single-file work is likely a cost leak — call it out
+  - Any `opus` pin on a teammate that does focused single-file work is likely a token-budget leak (Opus carries far more token weight than Sonnet/Haiku for the same work, on every backend) — call it out
+- Frontmatter sets `effort:` deliberately — `high` on Opus reasoning roles, `medium` on Sonnet/Haiku helpers, omitted (default) on focused implementers. Flag Opus agents with no effort tier
 - No duplicated content that belongs in `agent-team-protocol.md`
-- Frontmatter uses current features (model, isolation, memory, `team_name`)
+- Frontmatter uses current features (model, effort, isolation, memory, `team_name`)
 - Cross-references to rules and specs are valid
-- Teammates that dispatch many parallel tool calls benefit from Opus 4.7's wide tool-fanout; keep their prompts from over-sequencing work
+- Teammates that dispatch many parallel tool calls benefit from Opus 4.8's wide tool fan-out and large context; keep their prompts from over-sequencing work
 
 ### Rules
 - No content duplicated between rules files and CLAUDE.md
@@ -140,7 +144,7 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
 - Server config uses latest package versions (`@latest`)
 - `FASTMCP_LOG_LEVEL=ERROR` set to reduce noise
 - Deferred tool search threshold appropriate for server count — with the AWS plugin suite + standalone `awslabs.document-loader-mcp-server` footprint, the eager-load tool set should be kept small and everything else routed through `ToolSearch`
-- `MAX_MCP_OUTPUT_TOKENS` tuned so a single tool call cannot swamp the Opus 4.7 context window
+- `MAX_MCP_OUTPUT_TOKENS` tuned so a single tool call cannot swamp the context window — Opus 4.8's 1M context is larger, but an oversized tool result still wastes tokens and pollutes the cache
 
 ### Permissions (settings.local.json)
 - No stale one-off permission entries

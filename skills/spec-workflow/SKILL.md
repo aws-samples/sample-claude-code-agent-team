@@ -1,3 +1,8 @@
+---
+name: spec-workflow
+description: Spec-driven development loop with parallel task groups and the .claude/specs/<slug>/ structure (spec.md, design.md, tasks.md, review.md). Use before any non-trivial work that touches multiple files, involves architectural choices, or will be delegated to an agent team.
+---
+
 # Spec-Driven Workflow
 
 ## When to Create a Spec

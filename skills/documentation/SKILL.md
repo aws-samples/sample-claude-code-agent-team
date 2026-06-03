@@ -1,3 +1,8 @@
+---
+name: documentation
+description: Technical writing patterns for READMEs, runbooks, and architecture docs, with accuracy verification. Use when writing documentation, creating runbooks, or documenting system architecture.
+---
+
 # Documentation
 
 Use these patterns when writing documentation, creating runbooks, or documenting system architecture.

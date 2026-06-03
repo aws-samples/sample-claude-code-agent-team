@@ -1,3 +1,8 @@
+---
+name: pr-review
+description: Pull request review patterns and delegation to specialized review plugins. Use when reviewing pull requests, preparing code for review, or running manual code review outside the spec-driven workflow.
+---
+
 # PR Review
 
 Use this when reviewing pull requests, preparing code for review, or running manual code review outside the spec-driven workflow.

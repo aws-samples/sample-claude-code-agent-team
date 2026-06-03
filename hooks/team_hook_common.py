@@ -13,6 +13,7 @@ completion, or trap a teammate. Enforcement is a guardrail, not a tripwire.
 """
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 
@@ -31,6 +32,29 @@ def read_payload():
         return json.loads(raw) if raw.strip() else {}
     except Exception:
         return {}
+
+
+_UNSAFE_COMPONENT = re.compile(r"[^A-Za-z0-9._-]")
+
+
+def safe_path_component(value, default="_"):
+    """Sanitize a single untrusted path component (team name, task id) so it
+    cannot escape its intended parent directory.
+
+    Payload fields like team_name / task_id are attacker-influenceable (e.g. an
+    agent steered by prompt injection could create a team/task with crafted
+    identifiers). They get joined into filesystem paths the hooks then write to
+    or os.remove(), so a value like '../../x' or '/etc/x' must not be allowed to
+    traverse out. Strategy: drop any directory portion with basename(), then
+    allowlist to [A-Za-z0-9._-]. Never returns '', '.', or '..', and the result
+    never contains a path separator. No-op for legitimate slugs / numeric ids.
+    """
+    s = "" if value is None else str(value)
+    s = os.path.basename(s)              # '../../../tmp' -> 'tmp', '/etc/passwd' -> 'passwd'
+    s = _UNSAFE_COMPONENT.sub("_", s)    # replace any surviving separators / odd chars
+    if s in ("", ".", ".."):             # pure-dot results would still resolve to a dir
+        return default
+    return s
 
 
 def _now():

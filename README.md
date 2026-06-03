@@ -10,18 +10,18 @@ A sample configuration for multi-agent development workflows using [Claude Code]
 
 This repo provides a sample `.claude` configuration with four core agents that work together:
 
-| Agent | Role | Model |
-|-------|------|-------|
-| **fullstack-agent** | Team lead — researches, designs specs, creates plans, delegates work | opus |
-| **coding-agent** | Implements features and writes tests from specs | sonnet |
-| **devops-agent** | Infrastructure, CI/CD, containers, and documentation | sonnet |
-| **review-agent** | Reviews implementations for correctness, security, and quality | opus |
+| Agent | Role | Model | Effort |
+|-------|------|-------|--------|
+| **fullstack-agent** | Team lead — researches, designs specs, creates plans, delegates work | opus | high |
+| **coding-agent** | Implements features and writes tests from specs | sonnet | default |
+| **devops-agent** | Infrastructure, CI/CD, containers, and documentation | sonnet | default |
+| **review-agent** | Reviews implementations for correctness, security, and quality | opus | high |
 
 Additional on-demand agents:
 
-| Agent | Role | Model |
-|-------|------|-------|
-| **sa-agent** | AWS Solutions Architect — Well-Architected reviews, cost/security | sonnet |
+| Agent | Role | Model | Effort |
+|-------|------|-------|--------|
+| **sa-agent** | AWS Solutions Architect — Well-Architected reviews, cost/security | sonnet | medium |
 
 The `fullstack-agent` orchestrates the workflow: it writes specs, breaks work into parallelized task groups, delegates to `coding-agent` and `devops-agent` for implementation, then sends the results to `review-agent` for feedback. This loop continues until the reviewer passes the work.
 
@@ -221,7 +221,7 @@ claude
 
 ## Key Concepts
 
-**Agents** define who does what. Each agent has a markdown file with YAML frontmatter (name, description, model) and a detailed system prompt (role, constraints, workflow). The team lead (`fullstack-agent`) spawns and coordinates teammates.
+**Agents** define who does what. Each agent has a markdown file with YAML frontmatter (name, description, model, optional `effort`) and a detailed system prompt (role, constraints, workflow). The team lead (`fullstack-agent`) spawns and coordinates teammates. The optional `effort` field tunes reasoning depth per role — `high` for the Opus reasoning agents (team lead, review), `medium` for Sonnet helpers, default for focused implementers.
 
 **Rules** are global behavioral constraints that apply to all agents. They enforce consistency — like AWS security guidelines and production safeguards that must be honored on every interaction.
 
@@ -344,6 +344,7 @@ This configuration enables the following Claude Code plugins via `settings.json`
 | gitlab | GitLab issue/PR management |
 | code-simplifier | Code clarity and maintainability refinement |
 | frontend-design | Production-grade frontend interface design |
+| security-guidance | Security best practices for code, dependencies, and configuration — container hardening, secrets handling, and least-privilege guidance |
 | deploy-on-aws | AWS deployment workflows — codebase analysis, service recommendation, cost estimation, IaC generation, and deployment. Provides `awsiac` (CloudFormation/CDK validation, compliance, best practices), `awspricing` (pricing data, cost reports), and a diagram skill for architecture diagrams |
 | aws-amplify | AWS Amplify Gen 2 workflows — full-stack app deployment (React, Next.js, Vue, Angular, mobile), authentication, data models, storage, GraphQL APIs, sandbox/production environments |
 | aws-serverless | AWS serverless development — Lambda function design/build/deploy/test, SAM CLI operations, API Gateway (REST/HTTP/WebSocket), Event Source Mapping setup/optimization, serverless templates, durable functions |
@@ -357,9 +358,57 @@ MCP servers are configured in [`.mcp.json`](.mcp.json) and auto-installed on fir
 |--------|--------|---------|
 | [awslabs.document-loader-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | Load external documents (PDFs, web pages) |
 
+## Speed & Orchestration Modes
+
+Two on-demand Claude Code modes pair well with this agent-team setup. Both are optional and used per-task — not configured in this repo.
+
+- **`/fast`** — toggles faster Opus output without switching to a smaller model. Useful for interactive, iterative work (live debugging, tight edit-test loops) where latency matters more than token economy. Toggle it at the start of a session rather than mid-conversation. It does not change which model an agent uses — model selection stays in each agent's `model` frontmatter.
+- **Workflows / `ultracode`** — multi-agent orchestration that fans a task out across many subagents (parallel audits, large migrations, broad multi-file sweeps, multi-perspective design, adversarial review). Opt in by including the word **workflow** in a request, monitor progress with `/workflows`, or turn on **ultracode** for a standing workflow-per-task default. This is a heavier, broader-coverage complement to the lead → teammates → review loop above; reach for it when a task genuinely needs the breadth, and stay with the standard team loop for ordinary work.
+
+## Project-Local Settings (Optional)
+
+`.claude/settings.local.json` is your **personal, per-project** settings file — Claude Code auto-gitignores it (this repo also lists it in [`.gitignore`](.gitignore)), so it never gets committed. It's the right home for anything you don't want to share with the team or hard-code into the shared config: a **permission allow-list** so Claude Code stops prompting for tools and commands you trust, project MCP opt-ins, and any machine- or account-specific `env`/`model` overrides.
+
+Claude Code combines settings across scopes in this priority order:
+
+1. **Managed** (enterprise/MDM) — highest, cannot be overridden
+2. **Command-line flags** — temporary session overrides
+3. **Local** — `.claude/settings.local.json` (personal, per-project)
+4. **Project** — `.claude/settings.json` (shared, committed to git)
+5. **User** — `~/.claude/settings.json` (your global defaults) — lowest
+
+For single-valued keys (e.g. `model`), the higher scope wins, so a project's `.claude/settings.local.json` overrides your global settings for that project only. Permission allow-lists are **additive** — entries from every scope combine, so a project-local list extends your global one rather than replacing it.
+
+**Create it** — most commonly to pre-approve the tools and commands you trust, the same `permissions` block you keep in your global `~/.claude/settings.local.json`:
+
+```bash
+mkdir -p .claude
+cat > .claude/settings.local.json <<'JSON'
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Grep",
+      "Glob",
+      "Bash(git status)",
+      "Bash(npm test:*)",
+      "WebFetch(domain:docs.aws.amazon.com)"
+    ]
+  },
+  "enabledMcpjsonServers": ["awslabs.document-loader-mcp-server"]
+}
+JSON
+```
+
+Notes:
+- **Scope to least privilege.** Each entry is a tool Claude Code may then run without asking. A bare tool name like `"Bash"` or `"Edit"` approves *every* use of that tool; prefer scoped forms — `"Bash(npm test:*)"`, `"WebFetch(domain:...)"` — for anything with side effects. Grant only what you're comfortable auto-approving.
+- This is the same shape as the repo's own [`.claude/settings.local.json`](.claude/settings.local.json), which ships with an empty `allow` list and uses `enabledMcpjsonServers` to opt into the project's MCP server.
+- The same file can also carry personal `env` or `model` overrides — e.g. `"model": "opus"`, or on Amazon Bedrock the inference-profile IDs (`"model": "us.anthropic.claude-opus-4-8"` plus `ANTHROPIC_DEFAULT_*_MODEL` entries in `env`). It does **not** need to restate `hooks`, `enabledPlugins`, or marketplaces from the shared config.
+
 ## Customization
 
-- **Add agents**: Create a new `<name>.md` in `agents/` with frontmatter (`name`, `description`, `model`), then reference it in the fullstack-agent's team composition
+- **Add agents**: Create a new `<name>.md` in `agents/` with frontmatter (`name`, `description`, `model`, optional `effort`), then reference it in the fullstack-agent's team composition
 - **Add rules**: Drop a markdown file in `rules/` — all agents will follow it
 - **Add skills**: Create a `<name>/SKILL.md` in `skills/` — agents reference these for domain knowledge
 - **Change models**: Edit the `model` field in each agent's YAML frontmatter. Available models: `opus`, `sonnet`, `haiku`

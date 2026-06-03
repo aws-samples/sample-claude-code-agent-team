@@ -46,6 +46,7 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 - MCP servers are used for documentation lookup and diagram generation — not for executing privileged operations — users must verify new servers do not require privileged access
 - Claude Code flags suspected prompt injection in tool results — users must review flagged results and act accordingly
 - Users can review and approve/deny MCP server tool calls via the permission system — users must actively monitor and respond to these prompts
+- **Dependency pinning (supply chain):** the bundled `.mcp.json` resolves `awslabs.document-loader-mcp-server@latest` via `uvx` at session start, so the exact code executed is whatever `@latest` points to at that moment. This sample intentionally tracks `@latest` to stay current as a template, accepting that a compromised or yanked upstream release would be pulled automatically. Adopters running this in a sensitive context SHOULD pin a reviewed version (replace `@latest` with `@<version>`) and re-review on upgrade, trading currency for reproducibility — users must decide which tradeoff fits their threat model
 
 ### 5. Plugin Security
 
@@ -55,6 +56,22 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 - All configured plugins come from vetted marketplaces — the official Claude Code marketplace (`claude-plugins-official`) and the AWS Labs marketplace (`agent-plugins-for-aws`, declared in `extraKnownMarketplaces`). Users must review plugin permissions before enabling and vet any additional marketplaces before adding them
 - Plugins operate within Claude Code's permission framework — users must maintain appropriate permission settings
 - The `pr-review-toolkit` and `code-review` plugins provide specialized security and quality review — users must include these plugins in their configuration and act on their findings
+
+### 6. Enforcement Hook Execution
+
+**Threat:** The agent-team enforcement hooks (`hooks/*.py`) are the only executable code in this repository. Claude Code invokes them automatically as local Python subprocesses on the `TaskCreated`, `TaskCompleted`, and `TeammateIdle` events, with a JSON payload delivered on stdin. The payload carries agent-influenceable fields (`team_name`, `task_id`, `task_subject`, `task_description`, `teammate_name`). Hook logic that consumed these fields unsafely could introduce a local code-execution or unauthorized-filesystem-modification path that executes outside Claude Code's tool-call permission prompts.
+
+**Design properties** (verified in the bundled scripts):
+- **Fail-open by contract.** Every hook resolves any unexpected condition — empty/invalid payload, internal exception, missing state — to `allow` (exit 0). A hook bug can never roll back a valid task, block a legitimate completion, or trap a teammate. Enforcement is a guardrail, not a tripwire. The corollary users must accept: a crashing or tampered hook silently stops enforcing — the protocol degrades to unenforced, it does not hard-fail.
+- **No dynamic execution or shell-out.** The scripts use only the Python standard library. They perform no dynamic code evaluation, invoke no shell or external process, and do not reconstruct objects from the payload — input handling is limited to JSON parsing wrapped in `try/except`. This avoids the classic local code-execution sinks.
+- **Untrusted path components are sanitized.** The `TaskCompleted` gate derives a sentinel file path from `team_name` and `task_id`, then removes that file when verification passes. Both fields are passed through `safe_path_component()` (`team_hook_common.py`) — a basename reduction plus an `[A-Za-z0-9._-]` allowlist — so a crafted value such as `../../x` or `/etc/x` cannot traverse outside `~/.claude/logs/verified/`. The idle hook applies the same discipline to its nudge-state filename. Without this, an agent steered by prompt injection (Threat §4) could have induced deletion of `*.verified` files outside the intended directory.
+- **Sentinel consumption.** A passing sentinel is deleted so it cannot be replayed to re-complete a task. The deletion target is constrained to the sanitized path above.
+
+**Mitigations** (require user configuration and ongoing verification):
+- Hook scripts execute with the user's own privileges, outside the tool-call permission prompts — users MUST review `hooks/*.py` before installing them, exactly as they would any code they run locally, and re-review on update
+- Hooks are wired via project-relative `$CLAUDE_PROJECT_DIR/hooks/...` paths in the bundled `settings.json`; users installing globally must point the commands at their trusted `~/.claude/hooks/` copy and ensure that directory is not writable by untrusted processes
+- All hook decisions (allow/block, with reason and payload) are appended to `~/.claude/logs/team-hooks.jsonl` — users can audit enforcement behavior there
+- Bypass tokens (`[skip-format-check]`, `[skip-verify]`) intentionally disable a check for a single task; users must treat their presence in a task as a reviewable signal, not boilerplate
 
 ## AI Security Controls
 
@@ -153,6 +170,7 @@ Users MUST implement and maintain the following security controls. Failure to im
 - MCP server security review and approval — users must vet all MCP servers before adding them to `.mcp.json`
 - File system access controls and sensitive data protection — users must review and respond to Claude Code permission prompts
 - Production safety rule enforcement — users must not grant blanket approval for destructive operations
+- Enforcement hook review — users must read `hooks/*.py` before installing them and on every update (they run as local subprocesses with the user's privileges, outside the tool-call permission prompts), and keep the installed hook directory non-writable by untrusted processes
 - Ongoing verification that security controls remain correctly configured — users must periodically audit agent configurations and access policies
 
 ## AWS Shared Responsibility Model
@@ -224,6 +242,8 @@ Each phase must be verified before proceeding to the next:
 | Hardcoded secrets in generated code | Medium | High | review-agent security checks + pr-review-toolkit plugin |
 | MCP server returns manipulated data | Low | Medium | Prompt injection detection + user-visible tool results |
 | Plugin accesses unintended data | Low | Low | Claude Code permission framework + marketplace-only plugins |
+| Enforcement hook path traversal via crafted `team_name`/`task_id` | Low | Medium | `safe_path_component()` basename + allowlist sanitization confines writes/deletes to `~/.claude/logs/verified/` |
+| Tampered/crashing enforcement hook stops enforcing silently | Low | Medium | Fail-open by design + all decisions audited to `team-hooks.jsonl` + user review of `hooks/*.py` before install |
 
 ### Compliance Risks
 

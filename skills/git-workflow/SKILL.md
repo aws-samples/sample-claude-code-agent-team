@@ -1,3 +1,8 @@
+---
+name: git-workflow
+description: Conventional commit style, branch naming, and merge-conflict resolution, with commit-commands/github plugin integration. Use when working with version control, creating branches, writing commits, or resolving merge conflicts.
+---
+
 # Git Workflow
 
 Use these conventions when working with version control, creating branches, writing commits, or resolving merge conflicts.
