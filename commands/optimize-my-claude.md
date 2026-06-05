@@ -21,7 +21,6 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
    - `~/.claude/commands/*.md` (all custom commands)
    - `~/.claude/agents/.mcp.json` (agent MCP config)
    - `~/.claude/plugins/installed_plugins.json` and `~/.claude/plugins/blocklist.json`
-   - `~/.claude/specs/templates/*.md` (spec templates)
    - MCP server config from `~/.claude.json` (extract `mcpServers` and project-level `mcpServers`)
 
 2. **Record the current state** — note file sizes, line counts, and key settings for before/after comparison.

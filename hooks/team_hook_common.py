@@ -96,7 +96,7 @@ def role_of_teammate(name):
         return None
     n = name.lower()
     # Order matters only for disjoint prefixes; our roles don't overlap.
-    for role in ("coding", "devops", "sfdc", "sa", "review"):
+    for role in ("coding", "devops", "sa", "review"):
         if n == role or n.startswith(role + "-") or n.startswith(role):
             return role
     return None

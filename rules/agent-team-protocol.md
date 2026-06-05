@@ -44,7 +44,7 @@ If verification fails and you can't fix it within scope, mark `[!]` with the spe
 Three settings.json hooks enforce this protocol automatically when an agent team is active. They are **fail-open** (a hook error never blocks you) and log every decision to `~/.claude/logs/team-hooks.jsonl`. Scripts live at `hooks/` in this project (resolved via `$CLAUDE_PROJECT_DIR`).
 
 ### 1. Task format check (`TaskCreated`)
-A task is **rolled back at creation** unless its subject/description contains: a `[coding|devops|sa|sfdc]` role tag, pipe-delimited `| <files> | <acceptance>`, and a `Run: <command>`. This is the lead's concern (the lead authors tasks), but all agents should know the shape:
+A task is **rolled back at creation** unless its subject/description contains: a `[coding|devops|sa]` role tag, pipe-delimited `| <files> | <acceptance>`, and a `Run: <command>`. This is the lead's concern (the lead authors tasks), but all agents should know the shape:
 `[role] <verb> <what> | <file paths> | <acceptance>. Run: <command>`
 - **Bypass** (non-build / coordination / research tasks): include `[skip-format-check]` anywhere in the subject or description.
 

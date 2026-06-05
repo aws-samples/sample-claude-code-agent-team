@@ -2,7 +2,7 @@
 """TaskCreated hook — enforce task authoring format. Exit 2 rolls back creation.
 
 Authoring rule (agent-team-protocol / spec-workflow): a task must carry a role
-tag `[coding|devops|sa|sfdc]`, pipe-delimited `| <files> | <acceptance>`, and a
+tag `[coding|devops|sa]`, pipe-delimited `| <files> | <acceptance>`, and a
 `Run: <command>`. The check runs on subject + description combined.
 
 Bypass: include the token [skip-format-check] anywhere in the subject or
@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from team_hook_common import read_payload, allow, block, audit  # noqa: E402
 
 EVENT = "TaskCreated"
-ROLE_TAG = re.compile(r"\[(coding|devops|sa|sfdc)\]", re.I)
+ROLE_TAG = re.compile(r"\[(coding|devops|sa)\]", re.I)
 RUN_CMD = re.compile(r"\bRun:\s*\S")
 
 
@@ -35,7 +35,7 @@ def main():
 
     missing = []
     if not ROLE_TAG.search(text):
-        missing.append("`[role]` tag — one of [coding] [devops] [sa] [sfdc]")
+        missing.append("`[role]` tag — one of [coding] [devops] [sa]")
     if text.count("|") < 2:
         missing.append("`| <file paths> | <acceptance>` — both pipe-delimited sections")
     if not RUN_CMD.search(text):

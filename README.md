@@ -13,8 +13,8 @@ This repo provides a sample `.claude` configuration with four core agents that w
 | Agent | Role | Model | Effort |
 |-------|------|-------|--------|
 | **fullstack-agent** | Team lead — researches, designs specs, creates plans, delegates work | opus | high |
-| **coding-agent** | Implements features and writes tests from specs | sonnet | default |
-| **devops-agent** | Infrastructure, CI/CD, containers, and documentation | sonnet | default |
+| **coding-agent** | Implements features and writes tests from specs | sonnet | medium |
+| **devops-agent** | Infrastructure, CI/CD, containers, and documentation | sonnet | medium |
 | **review-agent** | Reviews implementations for correctness, security, and quality | opus | high |
 
 Additional on-demand agents:
@@ -23,20 +23,23 @@ Additional on-demand agents:
 |-------|------|-------|--------|
 | **sa-agent** | AWS Solutions Architect — Well-Architected reviews, cost/security | sonnet | medium |
 
-The `fullstack-agent` orchestrates the workflow: it writes specs, breaks work into parallelized task groups, delegates to `coding-agent` and `devops-agent` for implementation, then sends the results to `review-agent` for feedback. This loop continues until the reviewer passes the work.
+The `fullstack-agent` orchestrates the workflow: it writes specs, breaks work into wide parallelized task groups, spawns **parallel worker pools** (multiple instances of `coding-agent`, `devops-agent`, and `review-agent`) that drain a shared task queue concurrently, then consolidates review verdicts. This loop continues until every reviewer passes the work.
 
 ## How It Works
 
 ```
-fullstack-agent (plan + research) → coding-agent + devops-agent (build in parallel) → review-agent (verify) → fullstack-agent (next group or fix)
+fullstack-agent (plan + research)
+   → coding-agent ×N + devops-agent ×N (build in parallel, self-claiming from a shared queue)
+   → review-agent ×N (verify in parallel, one per scope)
+   → fullstack-agent (consolidate verdicts → next group or fix)
 ```
 
-1. **Plan** — `fullstack-agent` researches the problem, writes a spec (`spec.md`, `design.md`), and creates a parallelized task plan (`tasks.md`)
-2. **Build** — `fullstack-agent` delegates task groups to `coding-agent` and/or `devops-agent` in parallel via `TeamCreate` and `SendMessage`
-3. **Review** — `review-agent` analyzes the implementation and writes findings to `review.md`
-4. **Fix** — if the review fails, `fullstack-agent` creates fix tasks and loops back to build
+1. **Plan** — `fullstack-agent` researches the problem, writes a spec (`spec.md`, `design.md`), and creates a **wide, file-disjoint** task plan (`tasks.md`) sized so a pool of same-role agents can each claim a task at once
+2. **Build** — `fullstack-agent` spawns parallel worker pools (up to **6 `coding`**, **2 `devops`**, **4 `review`**) via `TeamCreate`; instances self-claim unclaimed, unblocked tasks from the shared queue and drain it concurrently
+3. **Review** — the `review-agent` pool reviews in parallel, each instance owning a disjoint scope and writing its own `review-<scope>.md` (a single `review.md` is used for small, cohesive groups); the lead consolidates verdicts (any FAIL ⇒ group FAILs)
+4. **Fix** — if any scope review fails, `fullstack-agent` creates fix tasks and loops back to build
 
-Agents coordinate through shared tasks (`TaskCreate`/`TaskUpdate`/`TaskList`) and direct messaging (`SendMessage`). The team lead uses `TeamCreate` to spawn teammates and `TeamDelete` to clean up after work is complete.
+Pool sizes are ceilings, not quotas — the lead sizes each pool to the parallel width of the task graph (tiny jobs spawn 1 each; large file-disjoint jobs spawn the full caps). Agents coordinate through shared tasks (`TaskCreate`/`TaskUpdate`/`TaskList`) and direct messaging (`SendMessage`). The team lead uses `TeamCreate` to spawn teammates and `TeamDelete` to clean up after work is complete.
 
 ## Prerequisites
 
@@ -205,6 +208,7 @@ claude
 │   └── execution-hygiene.md    # Non-interactive execution and dependency isolation
 ├── skills/                     # Domain-specific knowledge files (invoked on demand)
 │   ├── spec-workflow/          # Spec-driven development loop with parallel task groups
+│   ├── concurrent-cached-fetch/ # Concurrent + disk-cached bulk external fetching
 │   ├── documentation/          # Technical writing patterns
 │   ├── git-workflow/           # Git operations and conventions
 │   └── pr-review/              # Pull request review patterns
@@ -221,7 +225,7 @@ claude
 
 ## Key Concepts
 
-**Agents** define who does what. Each agent has a markdown file with YAML frontmatter (name, description, model, optional `effort`) and a detailed system prompt (role, constraints, workflow). The team lead (`fullstack-agent`) spawns and coordinates teammates. The optional `effort` field tunes reasoning depth per role — `high` for the Opus reasoning agents (team lead, review), `medium` for Sonnet helpers, default for focused implementers.
+**Agents** define who does what. Each agent has a markdown file with YAML frontmatter (name, description, model, optional `effort`) and a detailed system prompt (role, constraints, workflow). The team lead (`fullstack-agent`) spawns and coordinates teammates. The optional `effort` field tunes reasoning depth per role — `high` for the Opus reasoning agents (team lead, review), `medium` for the Sonnet teammates (coding, devops, sa).
 
 **Rules** are global behavioral constraints that apply to all agents. They enforce consistency — like AWS security guidelines and production safeguards that must be honored on every interaction.
 
@@ -229,7 +233,7 @@ claude
 
 **Hooks** are Python scripts wired into `settings.json` that machine-enforce the agent-team protocol. They gate three events (`TaskCreated`, `TaskCompleted`, `TeammateIdle`), are fail-open by design, and audit every decision to `~/.claude/logs/team-hooks.jsonl`. See the [Hooks](#hooks) section below for the task shape, sentinel convention, and bypass tokens.
 
-**Specs** are created at runtime in `.claude/specs/<slug>/` and contain the design decisions, task plans, review findings, and decision logs for each piece of work.
+**Specs** are created at runtime in `.claude/specs/<slug>/` and contain the design decisions, task plans, review findings, and decision logs for each piece of work. Reusable reference templates for these documents (`spec.md`, `design.md`, `review.md`, `sa-review.md`, `decisions.md`, `prd.md`) live in `docs/specs/templates/` — agents copy them into a new spec as starting points. Keeping the templates under `docs/` keeps reference material clearly separate from the project-specific specs that land in `.claude/specs/<slug>/`.
 
 ## Rules
 
@@ -244,6 +248,7 @@ claude
 | Skill | Purpose |
 |-------|---------|
 | `spec-workflow` | Defines the full plan → build → review loop with parallel task groups and the `.claude/specs/<slug>/` directory structure. Structural conventions (directory layout, task format) are also inlined into each agent file so they are always visible; this skill carries the deeper workflow narrative on demand |
+| `concurrent-cached-fetch` | Patterns for code that fans out over many independent external calls — bounded concurrency plus a content-keyed, no-expiry disk cache, with ready-to-adapt implementations in Python, JS/TS, Go, and Java. `fullstack-agent` plans for it at design time, `coding-agent` loads it before writing any bulk-fetch loop, and `review-agent` flags sequential/uncached bulk I/O against it |
 | `documentation` | Technical writing patterns for runbooks, architecture docs, and AWS service documentation linking. Invoked by `coding-agent` and `devops-agent` at task close-out, and by `fullstack-agent` in Phase 4 to refresh the project README and other docs before cleanup |
 | `git-workflow` | Conventional commit style, branch naming, and integration with the `commit-commands` plugin for commit/push/PR flows |
 | `pr-review` | Pull request review patterns and delegation to the `pr-review-toolkit` plugin for specialized analyses |
@@ -263,7 +268,7 @@ Three Python scripts in `hooks/` machine-enforce the agent-team protocol. They a
 Tasks authored by the team lead must follow:
 
 ```
-[coding|devops|sa|sfdc] <verb> <what> | <file paths> | <acceptance>. Run: <command>
+[coding|devops|sa] <verb> <what> | <file paths> | <acceptance>. Run: <command>
 ```
 
 Example: `[coding] add JWT verifier | src/auth/jwt.ts | unit tests pass. Run: npm test -- src/auth`
@@ -286,7 +291,7 @@ Add either token anywhere in the task subject or description for legitimate exce
 | Token | Use when |
 |-------|----------|
 | `[skip-format-check]` | The task is coordination/research/non-build work and doesn't need the `[role] \| files \| acceptance \| Run:` shape |
-| `[skip-verify]` | The task is pure analysis or documentation with no runnable verification command (typical for some `[sa]` / `[sfdc]` / docs-only tasks). Prefer giving the task a real `Run:` (lint, validate, `--dry-run`, query check) over a skip token where one exists |
+| `[skip-verify]` | The task is pure analysis or documentation with no runnable verification command (typical for some `[sa]` / docs-only tasks). Prefer giving the task a real `Run:` (lint, validate, `--dry-run`, query check) over a skip token where one exists |
 
 ### Verifying hooks are wired
 

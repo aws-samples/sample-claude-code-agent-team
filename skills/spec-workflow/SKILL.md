@@ -55,6 +55,14 @@ Tasks tracked in two synced places:
 
 Maximize parallelism: no shared file writes -> same group. Infrastructure before app code. Shared interfaces before consumers. SA review runs parallel with implementation (reviews design, not code).
 
+**Author for a worker pool, not a single worker.** The lead spawns *parallel pools* of same-role agents (up to 6 `coding`, 2 `devops`, 4 `review`) that self-claim from a shared queue. To keep them saturated:
+- Make groups **wide** — as many file-disjoint same-role tasks per group as there are instances of that role. A group with one fat task starves the pool; split fat tasks along file/module boundaries.
+- Make groups **few** — only start a new group when a real dependency forces a barrier. Independent work stays in the same group.
+- Front-load a shared interface as a small early group so all dependents then run in parallel.
+- Keep `[coding]` and `[devops]` work file-disjoint so both pools run at once.
+
+**Parallel per-scope review.** When a group's changes span multiple areas, the lead partitions them into disjoint scopes and runs a reviewer per scope, each writing its own `review-<scope>.md`; the lead consolidates verdicts (any FAIL ⇒ group FAILs). A single `review.md` is used for small, cohesive groups.
+
 ## Development Loop
 
 Plan -> Build (per group) -> Review -> Fix (if FAIL) -> Cleanup. See `fullstack-agent` system prompt for the detailed phase steps.
@@ -71,4 +79,4 @@ Plan -> Build (per group) -> Review -> Fix (if FAIL) -> Cleanup. See `fullstack-
 
 ## Spec and Document Formats
 
-If `.claude/specs/templates/` exists, use the templates there as starting points for `spec.md`, `design.md`, `review.md`, `sa-review.md`, `decisions.md`, and `prd.md` — they are examples, not rigid constraints. If the directory is absent, follow the section structures described in this file and in the agent definitions. Any `design.md` MUST include a Security Considerations section regardless of template availability.
+Reference templates live in `docs/specs/templates/` (`spec.md`, `design.md`, `review.md`, `sa-review.md`, `decisions.md`, `prd.md`) — copy them into the working spec at `.claude/specs/<slug>/` as starting points; they are examples, not rigid constraints. If the directory is absent, follow the section structures described in this file and in the agent definitions. Any `design.md` MUST include a Security Considerations section regardless of template availability.
