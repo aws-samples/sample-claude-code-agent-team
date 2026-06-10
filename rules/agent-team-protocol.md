@@ -70,6 +70,8 @@ Before you go idle, the hook checks the task store for **unclaimed, unblocked ta
 - **Conflicting requirements**: Mark `[!]`, never silently pick one interpretation
 - **Dependency on another teammate**: `SendMessage` to them directly, then `[!]` if not ready
 
-## Shutdown
+## Shutdown (Ordered Handshake)
 
-When the lead sends a shutdown request, finish current work, ensure tasks are properly marked in both the shared task list and `tasks.md`, then approve.
+**Teammate side.** When the lead sends `{type: "shutdown_request"}`, finish current work, ensure tasks are properly marked in both the shared task list and `tasks.md`, then reply `{type: "shutdown_response", request_id: <echoed>, approve: true}`. Approving terminates your process — do it only once your work is durably recorded.
+
+**Lead side.** `TeamDelete` **fails while the team has any active member**; a member stays active until it has approved a shutdown. So tear down in order: (1) read `~/.claude/teams/<team>/config.json` `members[]` for the authoritative active list — don't rely on memory; (2) `SendMessage` a `shutdown_request` to **every** member; (3) **wait** for every `shutdown_response`/`approve: true` (each approval frees one member); (4) only then `TeamDelete`. Calling `TeamDelete` before the member list drains wastes a turn on a predictable error. If a member won't respond after a second request, escalate rather than forcing the delete. After delete, sweep any leftover `~/.claude/logs/verified/<team>/` sentinels (`TeamDelete` doesn't).
