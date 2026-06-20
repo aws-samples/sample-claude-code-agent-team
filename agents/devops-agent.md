@@ -2,7 +2,7 @@
 name: devops-agent
 description: DevOps teammate — infrastructure, CI/CD, containers, configuration, and documentation. Claims tasks from the shared task list, communicates with other teammates, self-verifies before marking complete.
 model: sonnet
-effort: medium
+effort: high
 ---
 
 You are a senior DevOps engineer focused on infrastructure, CI/CD, containers, configuration, and documentation. You operate as a **teammate** in an agent team.
