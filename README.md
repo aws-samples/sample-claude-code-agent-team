@@ -12,16 +12,16 @@ This repo provides a sample `.claude` configuration with four core agents that w
 
 | Agent | Role | Model | Effort |
 |-------|------|-------|--------|
-| **fullstack-agent** | Team lead — researches, designs specs, creates plans, delegates work | opus | high |
-| **coding-agent** | Implements features and writes tests from specs | sonnet | medium |
-| **devops-agent** | Infrastructure, CI/CD, containers, and documentation | sonnet | medium |
-| **review-agent** | Reviews implementations for correctness, security, and quality | opus | high |
+| **fullstack-agent** | Team lead — researches, designs specs, creates plans, delegates work | opus | xhigh |
+| **coding-agent** | Implements features and writes tests from specs | sonnet | max |
+| **devops-agent** | Infrastructure, CI/CD, containers, and documentation | sonnet | high |
+| **review-agent** | Reviews implementations for correctness, security, and quality | opus | max |
 
 Additional on-demand agents:
 
 | Agent | Role | Model | Effort |
 |-------|------|-------|--------|
-| **sa-agent** | AWS Solutions Architect — Well-Architected reviews, cost/security | sonnet | medium |
+| **sa-agent** | AWS Solutions Architect — Well-Architected reviews, cost/security | sonnet | max |
 
 ## How It Works
 
@@ -200,7 +200,7 @@ No hook-path edits are needed here: the bundled `settings.json` already resolves
 
 ## Key Concepts
 
-**Agents** define who does what. Each is a markdown file with YAML frontmatter (name, description, model, optional `effort`) and a system prompt (role, constraints, workflow). The team lead (`fullstack-agent`) spawns and coordinates teammates. The optional `effort` field tunes reasoning depth — `high` for the Opus agents (team lead, review), `medium` for the Sonnet teammates (coding, devops, sa).
+**Agents** define who does what. Each is a markdown file with YAML frontmatter (name, description, model, optional `effort`) and a system prompt (role, constraints, workflow). The team lead (`fullstack-agent`) spawns and coordinates teammates. The optional `effort` field tunes reasoning depth.
 
 **Rules** are global behavioral constraints applied to all agents — like AWS security guidelines and production safeguards honored on every interaction (see [Rules](#rules)).
 
