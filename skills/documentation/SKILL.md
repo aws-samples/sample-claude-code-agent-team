@@ -13,12 +13,11 @@ Use these patterns when writing documentation, creating runbooks, or documenting
 |---|---|
 | `deploy-on-aws` diagram skill | Generate architecture diagrams for system documentation and runbooks |
 | `deploy-on-aws:awsknowledge` | Reference AWS service docs when writing architecture docs or runbooks — use `read_documentation`, `search_documentation`, and `recommend` to link to official docs rather than paraphrasing |
-| `awslabs.document-loader-mcp-server` | Load external reference documents (PDFs, web pages) as source material for documentation |
 | `aws-serverless` plugin | Use `get_lambda_guidance` and `get_serverless_templates` to document serverless patterns, Lambda configurations, and SAM deployment steps |
 | `databases-on-aws` plugin | Use `dsql_search_documentation` and `dsql_recommend` to document DSQL schema design, query patterns, and migration procedures |
 | `context7` MCP | Look up library/framework docs to verify technical accuracy in README examples |
 | `pr-review-toolkit:comment-analyzer` plugin | After writing any documentation — verifies accuracy, staleness risk, and maintainability |
-| `github` plugin | Link to issues, PRs, and discussions from documentation. Create issues for documentation gaps |
+| `gh` CLI | Link to issues, PRs, and discussions from documentation; create issues for documentation gaps (`gh issue create`) |
 
 ## README Structure
 
@@ -130,7 +129,7 @@ When writing documentation for a project that uses the spec workflow, link to re
 - `coding-agent` writes inline documentation (function/class/module docs) during implementation
 - Both agents delegate to `pr-review-toolkit:comment-analyzer` after writing docs to verify accuracy
 - `sa-agent` produces architecture review documentation in Well-Architected pillar format, claims and tracks tasks like other teammates
-- Use `github` plugin to create issues for documentation that needs future updates (e.g., after API changes)
+- Use the `gh` CLI (`gh issue create`) to create issues for documentation that needs future updates (e.g., after API changes)
 
 ## Writing Tips
 
@@ -140,4 +139,4 @@ When writing documentation for a project that uses the spec workflow, link to re
 - Update docs when code changes (or automate it)
 - Docs are concise and actionable — no filler
 - Use the `deploy-on-aws` diagram skill for architecture diagrams — don't describe what a diagram can show
-- Use `awslabs.document-loader-mcp-server` to load external specs or references rather than copy-pasting content
+- Use `WebFetch` (or your platform's equivalent) to load external specs or references rather than copy-pasting content

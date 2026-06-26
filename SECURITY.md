@@ -11,7 +11,7 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 **Threat:** Agents execute in the same Claude Code session with shared file system access. An agent operating outside defined scope due to configuration error or logic fault may perform unauthorized file system modifications beyond its assigned scope.
 
 **Mitigations** (require user configuration and ongoing verification):
-- Agent team protocol (`skills/agent-team-protocol/`) restricts each agent to files listed in its task assignment — users must define and maintain these restrictions
+- Agent team protocol (`rules/agent-team-protocol.md`) restricts each agent to files listed in its task assignment — users must define and maintain these restrictions
 - Verification gate requires agents to confirm they only modified assigned files before marking tasks complete — users must enforce this gate in their workflow
 - `review-agent` independently verifies changes match task scope — users must include review-agent in their team composition
 - Claude Code's permission system prompts the user before executing potentially dangerous operations — users must review and respond to these prompts
@@ -46,7 +46,6 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 - MCP servers are used for documentation lookup and diagram generation — not for executing privileged operations — users must verify new servers do not require privileged access
 - Claude Code flags suspected prompt injection in tool results — users must review flagged results and act accordingly
 - Users can review and approve/deny MCP server tool calls via the permission system — users must actively monitor and respond to these prompts
-- **Dependency pinning (supply chain):** the bundled `.mcp.json` resolves `awslabs.document-loader-mcp-server@latest` via `uvx` at session start, so the exact code executed is whatever `@latest` points to at that moment. This sample intentionally tracks `@latest` to stay current as a template, accepting that a compromised or yanked upstream release would be pulled automatically. Adopters running this in a sensitive context SHOULD pin a reviewed version (replace `@latest` with `@<version>`) and re-review on upgrade, trading currency for reproducibility — users must decide which tradeoff fits their threat model
 
 ### 5. Plugin Security
 
@@ -55,7 +54,7 @@ This document provides a security overview of the Claude Code Multi-Agent Develo
 **Mitigations** (require user configuration and ongoing verification):
 - All configured plugins come from vetted marketplaces — the official Claude Code marketplace (`claude-plugins-official`) and the AWS Labs marketplace (`agent-plugins-for-aws`, declared in `extraKnownMarketplaces`). Users must review plugin permissions before enabling and vet any additional marketplaces before adding them
 - Plugins operate within Claude Code's permission framework — users must maintain appropriate permission settings
-- The `pr-review-toolkit` and `code-review` plugins provide specialized security and quality review — users must include these plugins in their configuration and act on their findings
+- The `pr-review-toolkit` plugin provides specialized security and quality review — users must include this plugin in their configuration and act on its findings
 
 ### 6. Enforcement Hook Execution
 
@@ -221,7 +220,7 @@ Configure Claude Code permission settings to restrict file operations:
 Vet all MCP servers before adding to `.mcp.json`:
 - Review server source code or documentation for data handling practices
 - Verify servers do not require privileged AWS credentials: `cat .mcp.json | jq '.mcpServers[] | .command, .args'` (expect: no credential flags or secret references)
-- Remove any unreviewed third-party servers: `cat .mcp.json | jq '.mcpServers | keys'` (expect: only approved servers from the MCP Server Legal Approval table)
+- Remove any unreviewed third-party servers: `cat .mcp.json | jq '.mcpServers | keys'` (expect: only servers you have independently reviewed and approved)
 - Validate server integrity: `npx @anthropic/mcp-validator <server-name>` (expect: PASS for all security checks)
 
 ### Acceptance Criteria

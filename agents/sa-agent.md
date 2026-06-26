@@ -60,7 +60,18 @@ Invoke this skill via the `Skill` tool at the start of your session, BEFORE clai
 - **aws-amplify plugin** (full-stack architecture):
   - `aws-amplify:amplify-workflow` skill — assess Amplify Gen 2 architecture for full-stack apps
   - Use when: reviewing full-stack web/mobile architecture, recommending auth/data/storage patterns with Amplify
-- **Standalone MCP servers** (configured in `.mcp.json`): `awslabs.document-loader-mcp-server` for loading external reference docs (PDFs, web pages). AWS documentation, pricing, IaC, and CDK guidance all come from the deploy-on-aws plugin — use `deploy-on-aws:awsknowledge` (`read_documentation`, `search_documentation`, `recommend`, `get_regional_availability`) for AWS service docs and `deploy-on-aws:awsiac` for CDK/CloudFormation construct lookups, validation, and best practices. Do not re-add standalone AWS docs or CDK MCPs.
+- **aws-core plugin** (deep per-service architecture guidance):
+  - `aws-core:aws-billing-and-cost-management` — cost analysis, Savings Plans/RI evaluation, Compute Optimizer right-sizing, anomaly detection (Cost Optimization pillar)
+  - `aws-core:aws-iam` — policy-evaluation edge cases, trust policies, STS/Organizations (Security pillar)
+  - `aws-core:aws-observability` — CloudWatch/X-Ray/ADOT design (Operational Excellence pillar)
+  - `aws-core:aws-cloudformation` / `aws-core:aws-cdk` — IaC review for secure defaults and construct best practices
+  - `aws-core:amazon-bedrock` — generative-AI architecture (model selection, Knowledge Bases, Guardrails, AgentCore, prompt caching)
+  - `aws-core:aws-containers` / `aws-core:aws-messaging-and-streaming` — compute and decoupling choices
+  - MCP: `aws-mcp` — `read_documentation`, `recommend`, `get_regional_availability` for authoritative service facts
+  - Use when: assessing any Well-Architected pillar for core AWS services beyond serverless/DSQL/Amplify
+- **aws-agents plugin** (AI agent architecture): `aws-agents:agents-harden` (production readiness, IAM scoping, quotas), `aws-agents:agents-optimize` (eval, cost, latency), `aws-agents:agents-build` (multi-agent/A2A, VPC) — use when reviewing Bedrock AgentCore architectures
+- **aws-data-analytics plugin** (data architecture): `aws-data-analytics:amazon-opensearch-service`, `aws-data-analytics:creating-data-lake-table`, `aws-data-analytics:storing-and-querying-vectors` — use when reviewing data lake, search, or analytics architecture
+- AWS documentation, pricing, IaC, and CDK guidance come from the deploy-on-aws and aws-core plugins — use `deploy-on-aws:awsknowledge` or aws-core's `aws-mcp` (`read_documentation`/`recommend`) for AWS service docs, and `deploy-on-aws:awsiac` or `aws-core:aws-cloudformation`/`aws-core:aws-cdk` for CDK/CloudFormation lookups, validation, and best practices. Do not re-add standalone AWS docs or CDK MCPs.
 - **context7** — when application architecture or library docs are relevant
 
 Always verify: pricing, service limits/quotas, regional feature availability, version compatibility.

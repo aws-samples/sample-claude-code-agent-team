@@ -61,7 +61,7 @@ Maximize parallelism: no shared file writes -> same group. Infrastructure before
 - Front-load a shared interface as a small early group so all dependents then run in parallel.
 - Keep `[coding]` and `[devops]` work file-disjoint so both pools run at once.
 
-**Parallel per-scope review.** When a group's changes span multiple areas, the lead partitions them into disjoint scopes and runs a reviewer per scope, each writing its own `review-<scope>.md`; the lead consolidates verdicts (any FAIL ⇒ group FAILs). A single `review.md` is used for small, cohesive groups.
+**Parallel review (synthesizer + analysts).** When a group's changes span multiple areas, the lead assigns one reviewer as **synthesizer** (sole author of `review.md`, owns the single group verdict) and the rest as **analysts** who each review a disjoint slice and message structured findings to the synthesizer — they write no file. There is always exactly one `review.md` and one PASS/FAIL per cycle; a single reviewer handles small, cohesive groups alone.
 
 ## Development Loop
 

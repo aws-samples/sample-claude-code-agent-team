@@ -67,6 +67,19 @@ Use these plugin skills and tools when implementing AWS-backed features:
 - Invoke `aws-amplify:amplify-workflow` skill when implementing Amplify Gen 2 frontend integration (auth, data, storage)
 - Use for React/Next.js/Vue/Angular components that interact with Amplify backend resources
 
+**AWS Core** (`aws-core` plugin):
+- Invoke `aws-core:aws-sdk-python-usage` (boto3/botocore) or `aws-core:aws-sdk-js-v3-usage` (`@aws-sdk/*`) — **mandatory whenever your code imports the AWS SDK**: client/session config, `ClientError` handling, paginators, waiters, presigned URLs, retry/backoff
+- Invoke `aws-core:aws-secrets-manager` for any credential/secret access — use runtime dynamic references (`asm-exec`) so plaintext never enters code or context
+- Invoke `aws-core:amazon-bedrock` when building generative-AI features (Converse/InvokeModel, Knowledge Bases, Guardrails)
+- Invoke `aws-core:aws-messaging-and-streaming` for SQS/SNS/EventBridge/Kinesis producers and consumers
+- MCP: `aws-mcp` — `read_documentation` / `recommend` to confirm API behavior before coding; `call_aws` for read-only checks during development
+
+**AI Agents** (`aws-agents` plugin):
+- Invoke `aws-agents:agents-build` / `aws-agents:agents-connect` / `aws-agents:agents-get-started` when implementing Bedrock AgentCore agents — memory, tool/Gateway wiring, multi-agent orchestration, MCP-server hosting
+
+**Data & Analytics** (`aws-data-analytics` plugin):
+- Invoke `aws-data-analytics:querying-data-lake`, `aws-data-analytics:ingesting-into-data-lake`, or `aws-data-analytics:storing-and-querying-vectors` when writing data-lake ingestion/query code, Athena queries, or vector/RAG retrieval
+
 ## Conditional Skills
 
 | Skill | When to Use |

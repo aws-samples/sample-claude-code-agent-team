@@ -125,6 +125,26 @@ Required detail level: purpose, inputs/outputs (resource names, ARNs, endpoints,
 - **Frontend updates**: Deploy frontend asset changes with optional CloudFront cache invalidation
 - **Custom domains**: Configure custom domains including certificate and DNS setup
 
+### aws-core Plugin
+- **IaC authoring/validation**: `aws-core:aws-cdk` (construct patterns, stack architecture, `cdk deploy/synth/diff`, drift/import) and `aws-core:aws-cloudformation` (secure-default templates, cfn-lint/cfn-guard validation, change sets, failure root-cause)
+- **Containers**: `aws-core:aws-containers` — ECS/Fargate task definitions and services, ECR repos + lifecycle policies, ECS Exec debugging, blue/green
+- **Identity**: `aws-core:aws-iam` — least-privilege roles/policies, trust-policy and STS edge cases
+- **Observability**: `aws-core:aws-observability` — CloudWatch Logs Insights, metrics/alarms, dashboards, X-Ray, ADOT
+- **Messaging/streaming infra**: `aws-core:aws-messaging-and-streaming` — SQS, SNS, EventBridge, Kinesis, MSK
+- **Secrets**: `aws-core:aws-secrets-manager` — Secrets Manager wiring and runtime dynamic references
+- **Cost**: `aws-core:aws-billing-and-cost-management` — budgets, Savings Plans/RI evaluation, right-sizing, anomaly detection
+- **Credentials**: `aws-core:signing-in-to-aws` — `aws login` / credential setup for pipelines and local dev
+- **MCP**: `aws-mcp` — `call_aws` / `run_script` for live infrastructure verification and one-off AWS operations
+
+### aws-agents Plugin
+- `aws-agents:agents-deploy` — deploy/redeploy Bedrock AgentCore agents (pre-flight validation, CDK/IAM/quota diagnosis, version pinning, rollback, canary)
+- `aws-agents:agents-harden` — production IAM scoping, inbound auth, quota/rate-limit guidance for agent runtimes
+
+### aws-data-analytics Plugin
+- `aws-data-analytics:creating-data-lake-table` — provision S3 Tables / managed Iceberg, Glue catalog registration, partitioning, access control
+- `aws-data-analytics:connecting-to-data-source` / `aws-data-analytics:ingesting-into-data-lake` — wire JDBC sources and Glue ETL ingestion
+- `aws-data-analytics:amazon-opensearch-service` — provision/operate OpenSearch domains and Serverless collections
+
 ## Plugin Agents (Local Subagents)
 
 | Plugin Agent | When to Use |

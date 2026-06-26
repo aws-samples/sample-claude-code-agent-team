@@ -1,10 +1,10 @@
 # Review: <slug>
 
-> Reviewer instances write here. The team lead does NOT author this file (self-review is a category error). For parallel per-scope review, each reviewer owns `review-<scope>.md` instead; the lead consolidates verdicts (any FAIL ⇒ group FAILs).
+> Reviewer instances write here. The team lead does NOT author this file (self-review is a category error). Under parallel review there is exactly one `review.md` per group, authored solely by the **synthesizer** reviewer; analysts message their findings to the synthesizer and write no file.
 
 ## Cycle N — YYYY-MM-DD
 
-Reviewing: Group M — <description> [scope: <your scope>]
+Reviewing: Group M — <description>
 
 ### Spec Alignment
 Does each task satisfy its acceptance criteria and interface contracts? Note deviations.

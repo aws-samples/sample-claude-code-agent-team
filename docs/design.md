@@ -26,7 +26,7 @@ Agents coordinate through two mechanisms:
 1. **Shared task list** (`TaskCreate`/`TaskUpdate`/`TaskList`) — real-time status tracking
 2. **Direct messaging** (`SendMessage`) — interface clarifications, blocker notifications, review handoffs
 
-The team lead owns the workflow lifecycle: spawning teammates (`TeamCreate`), delegating work, monitoring progress, and cleaning up (`TeamDelete`).
+The team lead owns the workflow lifecycle: spawning teammates (named background `Agent` instances in the session's implicit team), delegating work, monitoring progress, and cleanup (automatic at session end).
 
 ## Security Considerations
 

@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Conventional commit style, branch naming, and merge-conflict resolution, with commit-commands/github plugin integration. Use when working with version control, creating branches, writing commits, or resolving merge conflicts.
+description: Conventional commit style, branch naming, and merge-conflict resolution, with commit-commands plugin and `gh` CLI integration. Use when working with version control, creating branches, writing commits, or resolving merge conflicts.
 ---
 
 # Git Workflow
@@ -9,17 +9,16 @@ Use these conventions when working with version control, creating branches, writ
 
 ## Plugins for Git Work
 
-| Plugin | When to Use |
+| Plugin / Tool | When to Use |
 |---|---|
 | `commit-commands:commit` | Create conventional commits — handles staging, message formatting, and pre-commit checks |
 | `commit-commands:commit-push-pr` | Commit, push, and open a PR in one flow |
 | `commit-commands:clean_gone` | Clean up local branches that have been deleted on remote (marked `[gone]`), including worktrees |
-| `github` | Create PRs, link issues, add labels, request reviewers, post comments on GitHub |
-| `gitlab` | Same capabilities for GitLab-hosted repos |
+| `gh` CLI | GitHub operations — create/edit PRs, link issues, add labels, request reviewers, post comments (`gh pr create`, `gh pr edit`, `gh issue create`) |
 
-**Prefer plugins over raw git commands** for:
+**Prefer plugins/CLI over raw git** for:
 - Committing — `commit-commands:commit` enforces conventional commit format
-- PR creation — `github`/`gitlab` plugin handles the full flow (create PR, set labels, link issues)
+- PR creation — `commit-commands:commit-push-pr` opens the PR; use the `gh` CLI for labels, linked issues, and reviewers
 - Branch cleanup — `commit-commands:clean_gone` safely removes stale branches and worktrees
 
 ## Commit Messages
@@ -135,4 +134,4 @@ Worktrees are useful when `fullstack-agent` orchestrates parallel task groups th
 - All agents use `--no-pager` and `GIT_PAGER=cat` for non-interactive output
 - `review-agent` may use `git diff` to identify the exact changeset under review
 - After all review cycles pass, use `commit-commands:commit-push-pr` or `superpowers:finishing-a-development-branch` to handle merge/PR creation
-- Use `github`/`gitlab` plugin to link PRs to issues and add reviewers
+- Use the `gh` CLI to link PRs to issues and add reviewers (`gh pr edit`)

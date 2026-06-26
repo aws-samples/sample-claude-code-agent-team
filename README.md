@@ -1,8 +1,8 @@
 # Claude Code Multi-Agent Development Sample
 
-A sample configuration for multi-agent development workflows using [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview). It shows how to set up a team of specialized AI agents that collaborate through a spec-driven process: a Full Stack lead orchestrates three specialists — Coding (application development), DevOps (infrastructure/deployment), and Review (code quality/security) — backed by Skills, Rules, and MCP servers for the tooling and knowledge needed to ship a full-stack application to AWS.
+A sample configuration for multi-agent development workflows using [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview). It shows how to set up a team of specialized AI agents that collaborate through a spec-driven process: a Full Stack lead orchestrates three specialists — Coding (application development), DevOps (infrastructure/deployment), and Review (code quality/security) — backed by Skills, Rules, and Plugins for the tooling and knowledge needed to ship a full-stack application to AWS.
 
-> **Disclaimer**: This repository is provided as an example only and is **NOT approved for production use**. The agent configurations, rules, and workflows are starting points — not production-ready defaults. You should review, adjust, and tailor them to fit your own project requirements, team conventions, and security posture. Adoption of this sample requires organizational legal review — you must complete the [LLM Legal Approval](#llm-legal-approval) and [MCP Server Legal Approval](#mcp-server-legal-approval) tables before use.
+> **Disclaimer**: This repository is provided as an example only and is **NOT approved for production use**. The agent configurations, rules, and workflows are starting points — not production-ready defaults. You should review, adjust, and tailor them to fit your own project requirements, team conventions, and security posture. Adoption of this sample requires organizational legal review — you must complete the [LLM Legal Approval](#llm-legal-approval) table before use.
 
 ## Overview
 
@@ -28,16 +28,16 @@ Additional on-demand agents:
 ```
 fullstack-agent (plan + research)
    → coding-agent ×N + devops-agent ×N (build in parallel, self-claiming from a shared queue)
-   → review-agent ×N (verify in parallel, one per scope)
-   → fullstack-agent (consolidate verdicts → next group or fix)
+   → review-agent ×N (analysts review slices in parallel; 1 synthesizer owns the verdict)
+   → fullstack-agent (reads the synthesizer's single verdict → next group or fix)
 ```
 
 1. **Plan** — `fullstack-agent` researches the problem, writes a spec (`spec.md`, `design.md`), and creates a **wide, file-disjoint** task plan (`tasks.md`) sized so a pool of same-role agents can each claim a task at once
-2. **Build** — `fullstack-agent` spawns parallel worker pools (up to **6 `coding`**, **2 `devops`**, **4 `review`**) via `TeamCreate`; instances self-claim unclaimed, unblocked tasks from the shared queue and drain it concurrently
-3. **Review** — the `review-agent` pool reviews in parallel, each instance owning a disjoint scope and writing its own `review-<scope>.md` (a single `review.md` is used for small, cohesive groups); the lead consolidates verdicts (any FAIL ⇒ group FAILs)
+2. **Build** — `fullstack-agent` spawns parallel worker pools (up to **6 `coding`**, **2 `devops`**, **4 `review`**) as named background `Agent` teammates in the session's implicit team; instances self-claim unclaimed, unblocked tasks from the shared queue and drain it concurrently
+3. **Review** — the `review-agent` pool reviews in parallel: analysts each review a disjoint slice and message findings to one **synthesizer**, who merges everything into a single `review.md` and emits the group verdict (exactly one `review.md` and one PASS/FAIL per cycle; a lone reviewer handles small, cohesive groups)
 4. **Fix** — if any scope review fails, `fullstack-agent` creates fix tasks and loops back to build
 
-Pool sizes are ceilings, not quotas — the lead sizes each pool to the parallel width of the task graph (tiny jobs spawn 1 each). Agents coordinate through shared tasks (`TaskCreate`/`TaskUpdate`/`TaskList`) and direct messaging (`SendMessage`); the lead uses `TeamCreate` to spawn teammates and `TeamDelete` to clean up when work is complete.
+Pool sizes are ceilings, not quotas — the lead sizes each pool to the parallel width of the task graph (tiny jobs spawn 1 each). Agents coordinate through shared tasks (`TaskCreate`/`TaskUpdate`/`TaskList`) and direct messaging (`SendMessage`); the lead spawns teammates as named background `Agent` instances in the session's implicit team, which is cleaned up automatically when the session ends.
 
 ## Prerequisites
 
@@ -83,7 +83,7 @@ chmod +x ~/.claude/hooks/*.py
 # Then manually merge into your existing files:
 # - settings.json: merge the "env", "enabledPlugins", and "hooks" keys (rewrite
 #   hook paths from $CLAUDE_PROJECT_DIR to $HOME/.claude/hooks/ — see below)
-# - .mcp.json: merge the "mcpServers" entries
+# - .mcp.json: ships empty (plugins provide MCP capability) — nothing to merge unless you add your own servers
 ```
 
 **Hook path resolution.** The bundled `settings.json` wires the three enforcement hooks with `python3 "$CLAUDE_PROJECT_DIR/hooks/..."` so this repo can ship and run them without leaving the project. When you install hooks under `~/.claude/hooks/` (the natural location for a global setup), edit the `hooks` block in your merged `settings.json` to use `$HOME/.claude/hooks/...` instead. Either form works — the hooks themselves resolve `~/.claude/logs/...` paths via `$HOME` regardless of where the scripts live.
@@ -114,7 +114,7 @@ No hook-path edits are needed here: the bundled `settings.json` already resolves
 
 4. Install required plugins.
 
-   Plugins live in two marketplaces, both declared by the bundled `settings.json` via `enabledPlugins` (15 entries) and `extraKnownMarketplaces`. The AWS marketplace registers automatically on next session start, but the **official Claude marketplace** must be registered explicitly — `extraKnownMarketplaces` only carries non-default sources.
+   Plugins live in two marketplaces, both declared by the bundled `settings.json` via `enabledPlugins` (15 enabled) and `extraKnownMarketplaces`. The AWS marketplace registers automatically on next session start, but the **official Claude marketplace** must be registered explicitly — `extraKnownMarketplaces` only carries non-default sources.
 
    **a) Register the official Claude marketplace** (one-time, host-wide):
 
@@ -130,11 +130,11 @@ No hook-path edits are needed here: the bundled `settings.json` already resolves
 
    **b) Install + enable plugins.** With the bundled `settings.json` in place, restart Claude Code (`claude`). On session start, it reads `enabledPlugins`, fetches each plugin from its declared marketplace, installs it under `~/.claude/plugins/cache/`, and enables it — the first start can take ~30s while plugins download. Alternatively, browse and toggle plugins interactively with `claude /plugins`, or install one directly: `claude plugin install deploy-on-aws@agent-plugins-for-aws`.
 
-   **c) Verify.** From inside Claude Code, run `/plugins` and confirm all 15 entries listed in `settings.json` show as **enabled**:
+   **c) Verify.** From inside Claude Code, run `/plugins` and confirm the 15 enabled plugins listed above show as **enabled**:
 
    | Marketplace | Plugins |
    |-------------|---------|
-   | `claude-plugins-official` | `context7`, `superpowers`, `code-review`, `code-simplifier`, `commit-commands`, `feature-dev`, `frontend-design`, `github`, `gitlab`, `pr-review-toolkit`, `security-guidance` |
+   | `claude-plugins-official` | `context7`, `superpowers`, `code-simplifier`, `commit-commands`, `feature-dev`, `frontend-design`, `pr-review-toolkit`, `security-guidance`, `aws-core`, `aws-agents`, `aws-data-analytics` |
    | `agent-plugins-for-aws` | `deploy-on-aws`, `aws-amplify`, `aws-serverless`, `databases-on-aws` |
 
    **Option B (merging into existing config):** make sure your merged `settings.json` includes **both** the full `enabledPlugins` block and the `extraKnownMarketplaces.agent-plugins-for-aws` block — without the marketplace definition, Claude Code cannot resolve the four AWS plugins (`@agent-plugins-for-aws`-suffixed names) even after the official marketplace is registered. Reference snippet:
@@ -163,9 +163,7 @@ No hook-path edits are needed here: the bundled `settings.json` already resolves
    - *Plugins in `enabledPlugins` show as missing in `/plugins`*: their marketplace isn't registered. Re-run `claude plugin marketplace list`; add `anthropics/claude-plugins-official` if absent (the AWS marketplace re-registers automatically from `settings.json`).
    - *Plugin loaded but its skills/agents are absent*: restart your session — plugin contributions are wired at session start, not hot-reloaded.
 
-5. Verify MCP servers. Those in `.mcp.json` auto-install on first use via `npx`/`uvx`; check their status with `claude /mcp`.
-
-6. Start Claude Code with `claude`.
+5. Start Claude Code with `claude`.
 
 ## Repository Structure
 
@@ -176,7 +174,7 @@ No hook-path edits are needed here: the bundled `settings.json` already resolves
 │   ├── devops-agent.md         # Infrastructure, CI/CD, containers, docs
 │   ├── review-agent.md         # Code review and quality verification
 │   └── sa-agent.md             # AWS Solutions Architect — Well-Architected reviews
-├── .mcp.json                   # MCP server configurations used by agents and skills
+├── .mcp.json                   # Standalone MCP server configs (empty — plugins provide MCP capability)
 ├── rules/                      # Global behavioral rules for all agents (auto-loaded every session)
 │   ├── AWS-security-guidelines.md # AWS security best practices and production safeguards
 │   ├── agent-team-protocol.md  # Shared teammate lifecycle and communication protocol
@@ -185,8 +183,7 @@ No hook-path edits are needed here: the bundled `settings.json` already resolves
 │   ├── spec-workflow/          # Spec-driven development loop with parallel task groups
 │   ├── concurrent-cached-fetch/ # Concurrent + disk-cached bulk external fetching
 │   ├── documentation/          # Technical writing patterns
-│   ├── git-workflow/           # Git operations and conventions
-│   └── pr-review/              # Pull request review patterns
+│   └── git-workflow/           # Git operations and conventions
 ├── commands/                   # Optional slash commands (see Optional Commands section)
 │   ├── brainstorm.md           # `/brainstorm` — structured new-project ideation -> requirements.md
 │   └── optimize-my-claude.md   # `/optimize-my-claude` — audit and tune ~/.claude after model releases
@@ -204,7 +201,7 @@ No hook-path edits are needed here: the bundled `settings.json` already resolves
 
 **Rules** are global behavioral constraints applied to all agents — like AWS security guidelines and production safeguards honored on every interaction (see [Rules](#rules)).
 
-**Skills** are domain-specific knowledge agents invoke on demand — patterns and protocols for workflows such as spec-driven development, git workflow, and PR review (see [Skills](#skills)).
+**Skills** are domain-specific knowledge agents invoke on demand — patterns and protocols for workflows such as spec-driven development and git workflow (see [Skills](#skills)).
 
 **Hooks** are Python scripts wired into `settings.json` that machine-enforce the protocol across three events (`TaskCreated`, `TaskCompleted`, `TeammateIdle`), fail-open, auditing every decision to `~/.claude/logs/team-hooks.jsonl` (see [Hooks](#hooks)).
 
@@ -226,7 +223,6 @@ No hook-path edits are needed here: the bundled `settings.json` already resolves
 | `concurrent-cached-fetch` | Patterns for code that fans out over many independent external calls — bounded concurrency plus a content-keyed, no-expiry disk cache, with ready-to-adapt implementations in Python, JS/TS, Go, and Java. `fullstack-agent` plans for it, `coding-agent` loads it before any bulk-fetch loop, and `review-agent` flags sequential/uncached bulk I/O |
 | `documentation` | Technical writing patterns for runbooks, architecture docs, and AWS service doc linking. Invoked by `coding-agent`/`devops-agent` at task close-out, and by `fullstack-agent` to refresh docs before cleanup |
 | `git-workflow` | Conventional commit style, branch naming, and integration with the `commit-commands` plugin for commit/push/PR flows |
-| `pr-review` | Pull request review patterns and delegation to the `pr-review-toolkit` plugin for specialized analyses |
 
 ## Hooks
 
@@ -313,11 +309,8 @@ This configuration enables the following Claude Code plugins via `settings.json`
 | context7 | Live documentation lookup for libraries and frameworks |
 | superpowers | Enhanced development workflows (TDD, debugging, planning) |
 | feature-dev | Guided feature development with architecture focus |
-| code-review | Code review workflows |
 | pr-review-toolkit | Comprehensive PR review with specialized agents |
-| commit-commands | Git commit, push, and PR creation |
-| github | GitHub issue/PR management |
-| gitlab | GitLab issue/PR management |
+| commit-commands | Git commit, push, and PR creation (GitHub via the `gh` CLI) |
 | code-simplifier | Code clarity and maintainability refinement |
 | frontend-design | Production-grade frontend interface design |
 | security-guidance | Security best practices — container hardening, secrets handling, and least-privilege guidance |
@@ -325,14 +318,9 @@ This configuration enables the following Claude Code plugins via `settings.json`
 | aws-amplify | AWS Amplify Gen 2 — full-stack app deployment, auth, data models, storage, GraphQL APIs, sandbox/production environments |
 | aws-serverless | AWS serverless — Lambda design/build/deploy/test, SAM CLI, API Gateway (REST/HTTP/WebSocket), Event Source Mapping, durable functions |
 | databases-on-aws | Aurora DSQL — queries, schema inspection, migrations, and best-practice recommendations |
-
-## MCP Servers
-
-MCP servers are configured in [`.mcp.json`](.mcp.json) and auto-installed on first use via `npx` or `uvx`. No manual installation is required.
-
-| Server | Source | Purpose |
-|--------|--------|---------|
-| [awslabs.document-loader-mcp-server](https://github.com/awslabs/mcp) | AWS Labs | Load external documents (PDFs, web pages) |
+| aws-core | Core AWS services — CDK/CloudFormation IaC, ECS/Fargate/ECR, IAM, CloudWatch/X-Ray observability, SQS/SNS/EventBridge/Kinesis, Amazon Bedrock, AWS SDK usage, Secrets Manager, cost/billing. Provides the `aws-mcp` proxy (`call_aws`, `run_script`, AWS docs) |
+| aws-agents | AI agents on AWS — scaffold, build, connect, deploy, harden, and optimize Amazon Bedrock AgentCore agents |
+| aws-data-analytics | Data lake & analytics — S3 Tables/Iceberg, Glue/Athena, ingestion, OpenSearch, and vector storage |
 
 ## Speed & Orchestration Modes
 
@@ -371,15 +359,14 @@ cat > .claude/settings.local.json <<'JSON'
       "Bash(npm test:*)",
       "WebFetch(domain:docs.aws.amazon.com)"
     ]
-  },
-  "enabledMcpjsonServers": ["awslabs.document-loader-mcp-server"]
+  }
 }
 JSON
 ```
 
 Notes:
 - **Scope to least privilege.** Each entry is a tool Claude Code may then run without asking. A bare name like `"Bash"` or `"Edit"` approves *every* use; prefer scoped forms — `"Bash(npm test:*)"`, `"WebFetch(domain:...)"` — for anything with side effects, and grant only what you're comfortable auto-approving.
-- Same shape as the repo's own [`.claude/settings.local.json`](.claude/settings.local.json), which ships with an empty `allow` list and uses `enabledMcpjsonServers` to opt into the project's MCP server.
+- Same shape as the repo's own [`.claude/settings.local.json`](.claude/settings.local.json), which ships with an empty `allow` list.
 - The file can also carry personal `env` or `model` overrides — e.g. `"model": "opus"`, or on Amazon Bedrock the inference-profile IDs (`"model": "us.anthropic.claude-opus-4-8"` plus `ANTHROPIC_DEFAULT_*_MODEL` entries in `env`). It need **not** restate `hooks`, `enabledPlugins`, or marketplaces from the shared config.
 
 ## Customization
@@ -402,15 +389,6 @@ Notes:
 | Usage Restrictions | [Any limitations] |
 
 > **Note**: Adopters must complete this section with their organization's legal approval status before using Claude Code in any project. Consult your legal and procurement teams for guidance on AI/LLM usage policies.
-
-## MCP Server Legal Approval
-
-Adopters must complete this table before using the MCP servers configured in [`.mcp.json`](.mcp.json).
-
-| Server | Provider | Approval Status | Right to Use | Distribution Rights | Security Review |
-|--------|----------|-----------------|--------------|---------------------|-----------------|
-| awslabs.document-loader-mcp-server | AWS Labs | Approved (AWS ToS) | Yes | Yes | AWS-managed |
-> **Note**: Third-party MCP servers require independent legal and security review by your organization before use. AWS-provided servers fall under AWS Terms of Service.
 
 ## Dataset Compliance
 

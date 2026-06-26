@@ -102,23 +102,23 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
 ### settings.json
 - Deprecated env vars (`ANTHROPIC_SMALL_FAST_MODEL`, etc.)
 - Prompt caching enabled (no `DISABLE_PROMPT_CACHING=1` unless justified) — caching ROI is highest at Opus pricing/usage weight; on Bedrock confirm `ENABLE_PROMPT_CACHING_1H_BEDROCK` is set. Cache hits reuse prior context at a fraction of a fresh read's token weight, stretching token-budget headroom regardless of backend
-- Effort level strategy. Opus 4.8 honors the effort knob more strictly than older models; the ladder is `low` < `medium` < `high` < `xhigh` (`xhigh` is Opus 4.8/4.7 only). Per-agent `effort:` frontmatter is the right lever — set `high` on Opus reasoning roles (team lead, review), `medium` on Sonnet/Haiku helper agents, and leave focused implementers at default. Reconcile against the user's "medium default, avoid global high-effort" philosophy in `CLAUDE.md`: that guidance is about the *global* default, not per-agent tiers — keep the global default modest and escalate per-role
-- Subagent model strategy (per-agent frontmatter vs global override). With Opus 4.8 as the main-loop model, token-budget discipline depends on routing focused/narrow work to Sonnet 4.6 or Haiku 4.5 subagents rather than inheriting Opus 4.8 — the win (lower token weight + latency) holds on every backend. Flag any teammate still pinned to `opus` whose task doesn't actually need it.
+- Effort level strategy. The valid ladder is `low` < `medium` < `high` < `xhigh` < `max`; Opus 4.8 honors the effort knob more strictly than older models. **This setup is tuned capability-first**: every agent runs at an elevated `effort:` tier on purpose (see each agent's frontmatter) — `fullstack` `xhigh`; `review`, `coding`, and `sa` `max`; `devops` `high` — trading higher token-budget usage (on any backend) for deeper reasoning and stronger review. Treat these per-agent efforts as the **intended state**: do NOT flag them as over-budget, recommend stepping them down to `medium`, or "reconcile" them back toward a budget step-down — only revisit if explicitly asked. The global main-loop default is separate from these per-agent tiers
+- Subagent model strategy (per-agent frontmatter vs global override). With Opus 4.8 as the main-loop model, route focused/narrow work to Sonnet 4.6 or Haiku 4.5 subagents rather than inheriting Opus 4.8 — the win (lower token weight + latency) holds on every backend. This is a **model** choice, separate from effort: the Sonnet teammates deliberately run at elevated effort (`coding`/`sa` `max`, `devops` `high`) per the capability-first preference, so do not "correct" their effort downward. Flag any teammate still pinned to `opus` whose task doesn't actually need that model.
 - Security hardening vars (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`)
-- MCP tool search threshold (`ENABLE_TOOL_SEARCH` / `MAX_MCP_OUTPUT_TOKENS`) — with the current server footprint (deploy-on-aws / aws-serverless / databases-on-aws / aws-amplify plugin MCPs + standalone `awslabs.document-loader-mcp-server`), tool-search deferral is effectively mandatory to keep the system prompt compact
+- MCP tool search threshold (`ENABLE_TOOL_SEARCH` / `MAX_MCP_OUTPUT_TOKENS`) — with the current server footprint (the AWS plugin suite — deploy-on-aws / aws-serverless / databases-on-aws / aws-amplify / aws-core / aws-agents / aws-data-analytics — plus context7), tool-search deferral is effectively mandatory to keep the system prompt compact
 - Model IDs are current for the active backend — main loop on Opus 4.8 (Bedrock inference profile `us.anthropic.claude-opus-4-8`; Vertex `claude-opus-4-8@<date>`; Anthropic API `claude-opus-4-8`). Agent frontmatter uses the `opus` / `sonnet` / `haiku` aliases, resolving to Opus 4.8, Sonnet 4.6, and Haiku 4.5. Verify no `claude-opus-4-7`, `claude-opus-4-6`, `claude-opus-4-5`, or earlier IDs linger as the main loop in settings, agent frontmatter, or CLAUDE.md — these are now legacy
 - **Inference backend matches the account.** Confirm `CLAUDE_CODE_USE_BEDROCK` / `CLAUDE_CODE_USE_VERTEX` (or their absence) is consistent with the model-ID style in use — a mismatch silently routes to the wrong or unavailable backend. Flag any inconsistency
 - `/fast` mode availability: works on Opus 4.8, 4.7, and 4.6 — it speeds up Opus output without downgrading to a smaller model (confirmed in the active CLI system prompt). Flag any docs claiming `/fast` is limited to older Opus versions and correct them.
 
 ### Agents
 - Model assignments appropriate for the Opus-4.8 era:
-  - `opus` (4.8) — team lead, cross-file reasoning, review-agent, code-architect roles; benefits most from the 1M context on large-repo work. Pair with `effort: high`
-  - `sonnet` (4.6) — `[coding]` and `[devops]` teammates with well-scoped tasks, Explore agent; `effort: medium` for the speed/quality balance
+  - `opus` (4.8) — team lead, cross-file reasoning, review-agent, code-architect roles; benefits most from the 1M context on large-repo work. Runs elevated effort (`fullstack` `xhigh`, `review` `max`) per the capability-first preference
+  - `sonnet` (4.6) — `[coding]` and `[devops]` teammates with well-scoped tasks, Explore agent; runs elevated effort (`coding`/`sa` `max`, `devops` `high`), not stepped down
   - `haiku` (4.5) — narrow lookups, mechanical transforms, status-line helpers, quick classifiers
   - Any `opus` pin on a teammate that does focused single-file work is likely a token-budget leak (Opus carries far more token weight than Sonnet/Haiku for the same work, on every backend) — call it out
-- Frontmatter sets `effort:` deliberately — `high` on Opus reasoning roles, `medium` on Sonnet/Haiku helpers, omitted (default) on focused implementers. Flag Opus agents with no effort tier
+- Frontmatter sets `effort:` deliberately per the capability-first preference — `xhigh` on `fullstack`, `max` on `review`/`coding`/`sa`, `high` on `devops`. Treat these as intended; do not flag them as over-budget or recommend stepping them down
 - No duplicated content that belongs in `agent-team-protocol.md`
-- Frontmatter uses current features (model, effort, isolation, memory, `team_name`)
+- Frontmatter uses current features (model, effort, isolation, memory)
 - Cross-references to rules and specs are valid
 - Teammates that dispatch many parallel tool calls benefit from Opus 4.8's wide tool fan-out and large context; keep their prompts from over-sequencing work
 
@@ -142,7 +142,7 @@ If a focus area is provided (e.g., "settings", "agents", "rules", "plugins", "mc
 - No deprecated servers (e.g., `awslabs.aws-diagram-mcp-server` has been superseded by the deploy-on-aws diagram skill)
 - Server config uses latest package versions (`@latest`)
 - `FASTMCP_LOG_LEVEL=ERROR` set to reduce noise
-- Deferred tool search threshold appropriate for server count — with the AWS plugin suite + standalone `awslabs.document-loader-mcp-server` footprint, the eager-load tool set should be kept small and everything else routed through `ToolSearch`
+- Deferred tool search threshold appropriate for server count — with the AWS plugin suite + context7 footprint, the eager-load tool set should be kept small and everything else routed through `ToolSearch`
 - `MAX_MCP_OUTPUT_TOKENS` tuned so a single tool call cannot swamp the context window — Opus 4.8's 1M context is larger, but an oversized tool result still wastes tokens and pollutes the cache
 
 ### Permissions (settings.local.json)
