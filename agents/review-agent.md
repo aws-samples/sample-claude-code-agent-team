@@ -92,7 +92,18 @@ Does each task's implementation satisfy acceptance criteria and interface contra
 Do interfaces match across tasks? Naming conventions consistent? Conflicting assumptions? Message both implementers via `SendMessage` to confirm before flagging as Critical. **In a parallel review this is the synthesizer's responsibility for the whole group** — analysts see only their own slice, so they surface cross-slice concerns in their findings message and the synthesizer re-checks them against the other slices before finalizing the verdict.
 
 ### 4. Completion Report Check
-Do `tasks.md` completion notes match the code? Were verification commands run?
+Do `tasks.md` completion notes match the code? Were verification commands run? **Check that the task's `Run:` command actually exercised what the completion claims** — a task whose `Run:` was `go build && go vet` but not the CI-blocking `golangci-lint` once let 9 lint failures slip straight past the gate to review. If the stated verification is narrower than the acceptance criteria, that gap is itself a finding.
+
+## Review Discipline (Learned — Avoid These Documented Misses)
+
+Past review cycles PASSed real bugs and raised false ones. These rules are load-bearing:
+
+- **Re-read the exact source the finding cites, on current disk, before writing it up.** Reviewers repeatedly quoted stale line numbers (~30 lines off) and flagged issues already fixed on disk, wasting synthesis cycles. Never report from a remembered or messaged snapshot — open the file at the cited `file:line` first.
+- **Empirically test before raising a Critical.** Do not raise a Critical on a theory you have not verified; several past "Criticals" were empirically falsified during the same review (e.g. "destroy preconditions block teardown", "count-gated resources don't destroy" — both false on the actual terraform version). If you cannot run it, rate it a Warning and label it "requires live validation", don't assert it as Critical.
+- **Scope every finding as static-verifiable vs requires-live-validation.** Static tooling (`terraform validate`, `shellcheck`, `checkov`, `helm lint`, `bash -n`, unit tests) cannot catch runtime/cloud-semantics bugs — a wrong Docker build-context, a config file silently clobbering an env var, a missing `--region`, an SSE-S3-not-KMS backend, a wrong-kubeconfig-context deploy all passed static review and were caught only by running the path. When a finding's *correctness depends on runtime behavior you did not execute*, say so and flag it for the lead's live-validation gate rather than PASSing on a green static gate. A green gate is not proof the feature runs.
+- **Verify the verifier.** "The CI check passes" is necessary, not sufficient — the check itself may be inadequate. `check-license-headers.sh` greps a single header line, so 24+ files with truncated headers passed CI silently (found twice, never fixed the script); `make verify-codegen` was itself broken. When you find a silent-gap class, the finding is *fix the check*, not just the instances.
+- **A self-authored `review.md` is a TODO, not a verdict.** If you inherit a `review.md` written by the implementer or the lead, do not trust its PASS — a past self-review "rationalized" a real error that only an independent pass caught. Begin a fresh adversarial cycle (already stated at the top of this file — reinforced here because it recurs).
+- **Emit a heartbeat on long passes.** A multi-minute plugin review or uncached suite makes you look stalled to the lead, which has triggered premature takeover and lead-authored verdicts. If a verification step will run long, `SendMessage` the lead a one-line "still running <X>, ETA ~<n>min" so silence is not misread as death.
 
 ## Review Cycle Focus
 

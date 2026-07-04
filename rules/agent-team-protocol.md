@@ -70,6 +70,16 @@ Before you go idle, the hook checks the task store for **unclaimed, unblocked ta
 - **Conflicting requirements**: Mark `[!]`, never silently pick one interpretation
 - **Dependency on another teammate**: `SendMessage` to them directly, then `[!]` if not ready
 
+## Coordination Under Unreliable Signals (Learned — All Teammates)
+
+Message delivery, idle pings, and the task-store MCP are all **laggy and occasionally lossy** in practice. Whole sessions have been derailed by treating these transient signals as ground truth. These rules are load-bearing:
+
+- **Ground truth is the disk, not the mailbox.** The authoritative state of the work is `tasks.md` + verification sentinels + the actual `git diff` + the files on disk — in that order — NOT `TaskList`/`TaskGet` output or the last message you received. The shared task store has reset ("No tasks found") or disconnected mid-session more than once; when it disagrees with disk, disk wins. Before acting on ANY status claim (yours or a peer's), confirm it against the underlying artifact.
+- **Delivery lag ≠ death.** Messages routinely arrive delayed, batched, and out of order. "No message in N minutes" or "no OS process visible" is **not** evidence a teammate is stalled or dead — it is evidence the channel is quiet. Teammates running long verification passes (a multi-minute plugin review, an uncached test suite, a `terraform plan`) look identical to a dead one over the wire. Do not conclude a peer has failed from silence alone.
+- **Ignore stale replays silently.** If you receive a `task_assignment` (or re-assignment) for a task that is already `completed`/`[x]`/sentinel-present, or for an ID that `TaskGet` reports as "not found", treat it as a stale roll-forward artifact: take no action and do **not** re-run verification or re-report. Reply at most once if a peer needs confirmation. Re-verifying completed work on every replay is a documented time sink that starves the pool.
+- **Claim atomically, one owner per task.** Before working a task, set yourself as owner and confirm no peer already owns it via a single authoritative `TaskGet`. If two instances race, the later one backs off to a different task. Never edit a file outside your claimed task's declared paths — peers run concurrently and will clobber.
+- **Globally-unique instance names.** With multiple specs/teams possibly active, a bare role name (e.g. `review-2`) can misroute to a same-named instance on a different spec. Use the names the lead assigned and address peers by their exact instance name.
+
 ## Shutdown (Implicit Team — Auto-Cleanup)
 
 There is **one implicit team per session**; the standalone `TeamCreate`/`TeamDelete` tools no longer exist. Teammates are background `Agent` spawns addressable by `name`, and the team is **torn down automatically when the session ends** — there is no `TeamDelete` step and no member-drain gate to satisfy.

@@ -104,8 +104,9 @@ Use these plugin skills and tools when implementing AWS-backed features:
 ## Additional Verification
 
 Beyond the shared verification gate:
-- Run linting/type-checking if the project has it configured
+- **Run the SAME checks CI runs, not a subset.** `go build && go vet` passing is not `golangci-lint` passing — a task that verified only build+vet once let 9 lint failures slip to review because the CI-blocking linter was never run. Before completing, run every gate the CI pipeline would block on for the files you touched (lint at the CI-pinned version, type-check, the full relevant test suite), not just the ones that are quick.
 - Confirm interface conformance — your implementation matches exact signatures from the task
+- **Don't mechanically apply a fix you don't understand — verify it preserves behavior.** A naive "replace `result.Requeue` with `result.RequeueAfter != 0`" would have silently broken assertions on code paths that genuinely return `Requeue: true` with `RequeueAfter == 0`. When fixing a flagged issue, understand what the existing assertions actually encode before changing them; a green-looking edit that quietly changes semantics is worse than the original finding. When editing a comment or a fix near tests, re-run the affected tests to confirm you preserved (not just silenced) their intent.
 - **Write the verification sentinel before completing** (machine-enforced by the `TaskCompleted` hook). After your task's `Run:` command passes: `mkdir -p ~/.claude/logs/verified/<team> && echo "<Run cmd> PASSED" > ~/.claude/logs/verified/<team>/task-<id>.verified` (your real team name + numeric task id). Without it, `TaskUpdate -> completed` is blocked. See `rules/agent-team-protocol.md` → "Enforced Hooks".
 
 ## Workflow

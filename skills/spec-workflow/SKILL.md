@@ -75,7 +75,11 @@ Plan -> Build (per group) -> Review -> Fix (if FAIL) -> Cleanup. See `fullstack-
 
 **Completion criteria**: Zero criticals + zero warnings + all tests passing + all tasks `[x]`. Suggestions don't block.
 
-**Safeguards**: Max 3 review cycles per group, then escalate. Log decisions in `decisions.md`. Same blocker twice -> escalate to user.
+**Live-validation gate (IaC / deploy / shell tooling)**: Static checks (`terraform validate`, `cfn-lint`, `shellcheck`, `bash -n`, `checkov`, `helm lint`) are necessary but NOT sufficient — they cannot catch runtime/cloud-semantics bugs (wrong build context, a config file clobbering an env var, a missing `--region`, an SSE-S3-not-KMS backend, a wrong-kubeconfig-context deploy). Any group that changes a deploy script, IaC, or CI MUST be exercised by a real `deploy → smoke → teardown` (or the closest executable equivalent) before it is "done". If it cannot run in the current environment, record the affected criteria as author-and-static-validate-only and escalate that the live gate is outstanding — never a PASS that implies it ran.
+
+**Verify the verifier**: A green gate is not proof the gate is adequate. When a check passes, confirm it actually asserts what it claims (a license-header check that greps one line passed truncated headers; a `verify-codegen` target was itself broken; a task `Run:` of `go build`+`go vet` never ran the CI-blocking linter). When you find a silent-gap class, fix the *check*, not just the instances.
+
+**Safeguards**: Max 3 review cycles per group, then escalate. Log decisions in `decisions.md`. Same blocker twice -> escalate to user. Ground truth is disk + sentinels + `git diff` + `tasks.md`, not the task-store MCP or the mailbox — both lag and occasionally reset; when they disagree with disk, disk wins.
 
 ## Spec and Document Formats
 
